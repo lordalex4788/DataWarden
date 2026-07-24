@@ -39,6 +39,25 @@ with a custom scheme: `0.05.10` → `0.05.20` → ... → `0.05.90` → `0.10.10
 
 ---
 
+## [0.05.40] - 2026-07-24 17:45:00
+
+### Core
+* **Execution Engine** (`core/execution.py`): Three-mode execution engine with audit/safe-move/hard-delete
+  * **Audit Mode**: Dry-run simulation, logs to audit.log only
+  * **Safe Move Mode**: Moves files to quarantine preserving directory structure, with full metadata preservation (timestamps, permissions, owner, xattrs)
+  * **Hard Delete Mode**: Permanent deletion
+  * Mirror quarantine structure: `/quarantine/<mount_point>/<relative_path>` for traceability
+* **Snapshot Manager** (`core/snapshot.py`): Transactional snapshot system
+  * Unique snapshot IDs with timestamp + UUID
+  * Bidirectional mapping: quarantine_path ↔ original_path
+  * Rollback mechanism: restores files with original metadata
+  * Retention policies: max GB and max count with auto-pruning
+  * Quarantine usage tracking
+* **Initial Snapshot Prompt**: First-run modal for baseline snapshot creation
+* **Tests** (`tests/core/test_execution_snapshot.py`): 24 comprehensive tests covering all execution modes, snapshot operations, rollback, retention, and initial snapshot prompt
+
+---
+
 ## [0.05.30] - 2026-07-24 16:30:00
 
 ### Core

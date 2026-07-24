@@ -142,14 +142,36 @@ class ExecutionEngine:
         quarantine_path.parent.mkdir(parents=True, exist_ok=True)
 
         if not dry_run:
-            # Preserve metadata
-            self._preserve_metadata(src, quarantine_path)
+            # Get metadata BEFORE moving (src will not exist after move)
+            stat = src.stat()
+            # Move file first
             shutil.move(str(src), str(quarantine_path))
+            # Then preserve metadata on the moved file
+            self._preserve_metadata_from_stat(quarantine_path, stat)
             self._log_operation("SAFE_MOVE", str(src), str(quarantine_path))
         else:
             self._log_operation("SAFE_MOVE (dry)", str(src), str(quarantine_path))
 
         return str(quarantine_path)
+
+    def _preserve_metadata_from_stat(self, dst: Path, stat: os.stat_result) -> None:
+        """Preserve file metadata on destination using pre-captured stat."""
+        # Preserve timestamps
+        os.utime(dst, (stat.st_atime, stat.st_mtime))
+        # Preserve permissions
+        dst.chmod(stat.st_mode)
+        # Try to preserve owner (requires root)
+        try:
+            os.chown(dst, stat.st_uid, stat.st_gid)
+        except PermissionError:
+            pass
+        # Preserve extended attributes
+        try:
+            import xattr
+            for key in xattr.listxattr(dst):
+                xattr.setxattr(dst, key, xattr.getxattr(dst, key))
+        except (ImportError, OSError):
+            pass
 
     def _hard_delete_operation(self, file_meta: FileMetadata, dry_run: bool) -> str:
         """Permanently delete file."""
@@ -178,26 +200,6 @@ class ExecutionEngine:
                 except ValueError:
                     continue
         return Path("/")
-
-    def _preserve_metadata(self, src: Path, dst: Path) -> None:
-        """Preserve file metadata during move."""
-        stat = src.stat()
-        # Preserve timestamps
-        os.utime(dst, (stat.st_atime, stat.st_mtime))
-        # Preserve permissions
-        dst.chmod(stat.st_mode)
-        # Try to preserve owner (requires root)
-        try:
-            os.chown(dst, stat.st_uid, stat.st_gid)
-        except PermissionError:
-            pass
-        # Preserve extended attributes
-        try:
-            import xattr
-            for key in xattr.listxattr(src):
-                xattr.setxattr(dst, key, xattr.getxattr(src, key))
-        except (ImportError, OSError):
-            pass
 
     def _log_operation(self, operation: str, source: str, destination: str) -> None:
         """Log operation to audit log."""
