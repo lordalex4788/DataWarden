@@ -1,25 +1,23 @@
 """Tests for Phase 3: Smart Selector Pipeline."""
 
-import pytest
-from datetime import datetime
-from pathlib import Path
 
+import pytest
+
+from core.models import DuplicateFile, FileMetadata
 from core.selector import (
-    Filter,
-    FilterPipeline,
+    FILTER_REGISTRY,
+    ArtifactFilter,
+    DuplicateGroup,
+    FilenameHygieneFilter,
     FilterAction,
     FilterDecision,
-    PathPriorityFilter,
-    FilenameHygieneFilter,
-    ArtifactFilter,
-    PathDepthFilter,
-    TimestampFilter,
+    FilterPipeline,
     OwnerFilter,
+    PathDepthFilter,
+    PathPriorityFilter,
     SelectorEngine,
-    FILTER_REGISTRY,
-    DuplicateGroup,
+    TimestampFilter,
 )
-from core.models import FileMetadata
 
 
 def create_test_group(
@@ -44,7 +42,7 @@ def create_test_group(
             is_ref=data.get("is_ref", False),
             symlink_target=data.get("symlink_target"),
         )
-        files.append(meta)
+        files.append(DuplicateFile(metadata=meta, is_reference=data.get("is_ref", False)))
     return DuplicateGroup(hash=hash_val, size=size, files=files)
 
 
@@ -64,9 +62,9 @@ class TestFilterProtocol:
         assert decision.filter_name == "test_filter"
 
     def test_filter_action_enum(self):
-        assert FilterAction.KEEP == "KEEP"
-        assert FilterAction.DELETE == "DELETE"
-        assert FilterAction.SKIP == "SKIP"
+        assert FilterAction.KEEP.value == "keep"
+        assert FilterAction.DELETE.value == "delete"
+        assert FilterAction.SKIP.value == "skip"
 
 
 class TestPathPriorityFilter:
@@ -81,8 +79,8 @@ class TestPathPriorityFilter:
         filter = PathPriorityFilter(ref_prefixes=["/ref"])
         decisions = filter.evaluate(group)
 
-        ref_decision = next(d for d, f in zip(decisions, group.files) if f.is_ref)
-        non_ref_decision = next(d for d, f in zip(decisions, group.files) if not f.is_ref)
+        ref_decision = next(d for d, f in zip(decisions, group.files, strict=True) if f.is_reference)
+        non_ref_decision = next(d for d, f in zip(decisions, group.files, strict=True) if not f.is_reference)
 
         assert ref_decision.action == FilterAction.KEEP
         assert non_ref_decision.action == FilterAction.DELETE
@@ -108,7 +106,7 @@ class TestPathPriorityFilter:
         filter = PathPriorityFilter(ref_prefixes=["/backup", "/archive"])
         decisions = filter.evaluate(group)
 
-        ref_decision = next(d for d, f in zip(decisions, group.files) if f.is_ref)
+        ref_decision = next(d for d, f in zip(decisions, group.files, strict=True) if f.is_reference)
         assert ref_decision.action == FilterAction.KEEP
 
 

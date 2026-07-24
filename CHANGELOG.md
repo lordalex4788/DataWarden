@@ -20,15 +20,8 @@ with a custom scheme: `0.05.10` → `0.05.20` → ... → `0.05.90` → `0.10.10
 * **Models** (`core/models.py`): Complete dataclasses for FileMetadata, ScanConfig, Savestate, DuplicateGroup, Snapshot, WardenZone, WardenIncident, TelemetryData, Enums (SymlinkMode, ScanStatus, ErrorAction, ExecutionMode, TrustLevel)
 * **Indexer** (`core/indexer.py`): HashEngine (xxh3_64 streaming), MetadataExtractor, FileTypeFilter, SavestateManager (folder compression), IndexWriter (JSONL splitting + manifest), SymlinkHandler (loop detection), HardlinkTracker, ErrorManager
 * **Ref Engine** (`core/ref_engine.py`): CrossReferenceEngine (SQLite in-memory), intra/inter folder comparison, reference protection logic
-* **Selector** (`core/selector.py`): Filter protocol + pipeline, 6 built-in filters (PathPriority, FilenameHygiene, Artifact, PathDepth, Timestamp, Owner), cascade logic, preset serialization
-* **Snapshot** (`core/snapshot.py`): SnapshotManager (transactional, quarantine mirror, rollback, retention), ExecutionEngine (audit/safe_move/hard_delete + audit log)
 * **Telemetry** (`core/telemetry.py`): Async TelemetryEngine with subscriber queues, rolling speed/ETA calculation
 * **Error Handler** (`core/error_handler.py`): ErrorManager with ASK/AUTO_SKIP/RETRY rules, ErrorHandler integration with savestate
-* **Confirmation** (`core/confirmation.py`): Multi-level ConfirmationEngine with custom hotkeys, ConfirmationManager per mode, profiles (minimal/standard/strict/paranoid)
-* **AI Filter** (`core/ai_filter.py`): AIFilterEngine with OllamaClient, SelectionAssist, NL→Filter Pipeline, CopilotExplain/Suggest, WardenTriage/Query
-* **Policy** (`core/policy.py`): DynamicPolicyManager with GlobalTrustLevel (0-3), BundleGatekeepers (4 bundles), LearnedRules (dynamic whitelist), RELAX_TRUST flow
-* **Notes** (`core/notes.py`): MetadataNoteManager (path-attached notes, tree indicators `[📝 N]`, global archive F12, search)
-* **Warden** (`core/warden.py`): FileSystemWarden (watchdog), 3-pillar validation (perms/naming/classification), LLM triage, incident dashboard, natural language query
 
 ### UI
 * **Main App** (`main.py`): DataWardenApp with 9 screens (Indexing, Compare, Select, Execute, Settings, Commander, Warden, Notes), navigation, bindings
@@ -43,6 +36,21 @@ with a custom scheme: `0.05.10` → `0.05.20` → ... → `0.05.90` → `0.10.10
 * **README.md**: Bilingual (DE/EN) with overview, features table, install, quickstart, structure, license
 * **PLAN.md**: Complete 9-phase build plan with dependencies, milestones, risks, open decisions
 * **AGENTS.md**: opencode agent instructions (workflow, phases, coding standards, testing, safety checks, escalation)
+
+---
+
+## [0.05.30] - 2026-07-24 16:30:00
+
+### Core
+* **Selector** (`core/selector.py`): Filter protocol + pipeline implementation with cascading logic
+  * 6 built-in filters: PathPriorityFilter (reference path preference), FilenameHygieneFilter (clean filename scoring), ArtifactFilter (detects _copy, (1), _v2, ~, .bak), PathDepthFilter (shallower paths), TimestampFilter (newest/oldest), OwnerFilter (UID/GID preference)
+  * FilterPipeline: cascading evaluation (first decisive wins), JSON serialization, preset save/load
+  * SelectorEngine: batch processing across all duplicate groups
+  * FILTER_REGISTRY for dynamic filter loading
+* **Tests** (`tests/core/test_selector.py`): 36 comprehensive unit tests covering all filters, pipeline behavior, serialization, property-based determinism
+
+### Tests
+* Unit tests for all selector components passing (59 total tests across core modules)
 
 ---
 

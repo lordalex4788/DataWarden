@@ -59,22 +59,31 @@ class PathPriorityFilter:
 
     def evaluate(self, group: DuplicateGroup) -> list[FilterDecision]:
         decisions = []
+        any_match = False
         for f in group.files:
-            is_ref_path = any(f.path.startswith(p) for p in self.ref_prefixes)
+            is_ref_path = any(f.metadata.path.startswith(p) for p in self.ref_prefixes)
             if is_ref_path:
+                any_match = True
                 decisions.append(FilterDecision(
                     action=FilterAction.KEEP,
                     confidence=0.9,
-                    reason=f"In reference path: {self._matching_prefix(f.path)}",
+                    reason=f"In reference path: {self._matching_prefix(f.metadata.path)}",
                     filter_name=self.name
                 ))
             else:
                 decisions.append(FilterDecision(
-                    action=FilterAction.SKIP,
-                    confidence=0.0,
+                    action=FilterAction.DELETE,
+                    confidence=0.8,
                     reason="Not in reference path",
                     filter_name=self.name
                 ))
+
+        # If no file matched the ref prefix, all should be SKIP (undecided)
+        if not any_match:
+            for d in decisions:
+                d.action = FilterAction.SKIP
+                d.confidence = 0.0
+                d.reason = "No reference path matched"
         return decisions
 
     def _matching_prefix(self, path: str) -> str:
@@ -118,7 +127,7 @@ class FilenameHygieneFilter:
         # Score all files
         scored = []
         for f in group.files:
-            score = self._score_filename(Path(f.path).name)
+            score = self._score_filename(Path(f.metadata.path).name)
             scored.append((f, score))
 
         # Find best score
@@ -126,7 +135,7 @@ class FilenameHygieneFilter:
 
         # Return decisions in original order
         decisions = []
-        for f, score in scored:
+        for _f, score in scored:
             if score == best_score and best_score > 0.5:
                 action = FilterAction.KEEP
                 confidence = min(score, 0.85)
@@ -186,12 +195,12 @@ class ArtifactFilter:
     name = "artifact"
 
     ARTIFACT_PATTERNS = [
-        (re.compile(r'\(\d+\)$'), "numbered_suffix"),           # file (1).txt
-        (re.compile(r'[-_](copy|kopie|copy|duplicate)\d*$', re.I), "copy_suffix"),  # _copy, -Kopie
-        (re.compile(r'[-_]v\d+$', re.I), "version_suffix"),    # _v2, -V3
-        (re.compile(r'[-_]backup$', re.I), "backup_suffix"),   # _backup
-        (re.compile(r'~\d*$'), "tilde_suffix"),                # ~, ~1
-        (re.compile(r'\.bak$', re.I), "bak_extension"),        # .bak
+        (re.compile(r'\(\d+\)(\.[^.]+)?$'), "numbered_suffix"),           # file (1).txt
+        (re.compile(r'[-_](copy|kopie|duplicate)\d*(\.[^.]+)?$', re.I), "copy_suffix"),  # _copy, -Kopie
+        (re.compile(r'[-_]v\d+(\.[^.]+)?$', re.I), "version_suffix"),    # _v2, -V3
+        (re.compile(r'[-_]backup(\.[^.]+)?$', re.I), "backup_suffix"),   # _backup
+        (re.compile(r'~\d*(\.[^.]+)?$'), "tilde_suffix"),                # ~, ~1
+        (re.compile(r'\.bak(\.[^.]+)?$', re.I), "bak_extension"),        # .bak
     ]
 
     def __init__(self, custom_patterns: list[str] = None):
@@ -200,8 +209,9 @@ class ArtifactFilter:
 
     def evaluate(self, group: DuplicateGroup) -> list[FilterDecision]:
         decisions = []
+        any_artifact = False
         for f in group.files:
-            filename = Path(f.path).name
+            filename = Path(f.metadata.path).name  # use full filename with extension
             is_artifact = False
             match_type = ""
 
@@ -219,6 +229,7 @@ class ArtifactFilter:
                         break
 
             if is_artifact:
+                any_artifact = True
                 decisions.append(FilterDecision(
                     action=FilterAction.DELETE,
                     confidence=0.95,
@@ -227,11 +238,18 @@ class ArtifactFilter:
                 ))
             else:
                 decisions.append(FilterDecision(
-                    action=FilterAction.SKIP,
-                    confidence=0.0,
-                    reason="No artifact pattern matched",
+                    action=FilterAction.KEEP,
+                    confidence=0.6,
+                    reason="No artifact pattern matched (likely original)",
                     filter_name=self.name
                 ))
+
+        # If no artifacts detected in any file, all should be SKIP (undecided)
+        if not any_artifact:
+            for d in decisions:
+                d.action = FilterAction.SKIP
+                d.confidence = 0.0
+                d.reason = "No artifacts detected in group"
         return decisions
 
     def get_params(self) -> dict:
@@ -253,29 +271,32 @@ class PathDepthFilter:
     def evaluate(self, group: DuplicateGroup) -> list[FilterDecision]:
         depths = []
         for f in group.files:
-            depth = f.path.count('/') + f.path.count('\\')
+            depth = f.metadata.path.count('/') + f.metadata.path.count('\\')
             depths.append((f, depth))
 
         depths.sort(key=lambda x: x[1], reverse=not self.prefer_shallower)
         best_depth = depths[0][1] if depths else 0
 
-        decisions = []
+        # Create a dict mapping file to decision
+        decision_map = {}
         for _f, depth in depths:
             if depth == best_depth:
-                decisions.append(FilterDecision(
+                decision_map[_f.metadata.path] = FilterDecision(
                     action=FilterAction.KEEP,
                     confidence=0.7,
                     reason=f"Optimal path depth: {depth}",
                     filter_name=self.name
-                ))
+                )
             else:
-                decisions.append(FilterDecision(
+                decision_map[_f.metadata.path] = FilterDecision(
                     action=FilterAction.DELETE,
                     confidence=0.6,
                     reason=f"Suboptimal path depth: {depth} vs {best_depth}",
                     filter_name=self.name
-                ))
-        return decisions
+                )
+
+        # Return in original order
+        return [decision_map[f.metadata.path] for f in group.files]
 
     def get_params(self) -> dict:
         return {"prefer_shallower": self.prefer_shallower}
@@ -294,27 +315,30 @@ class TimestampFilter:
         self.prefer_newest = prefer_newest
 
     def evaluate(self, group: DuplicateGroup) -> list[FilterDecision]:
-        times = [(f, f.mtime) for f in group.files]
+        times = [(f, f.metadata.mtime) for f in group.files]
         times.sort(key=lambda x: x[1], reverse=self.prefer_newest)
         best_time = times[0][1] if times else 0
 
-        decisions = []
+        # Create decisions in original file order
+        decision_map = {}
         for _f, mtime in times:
             if mtime == best_time:
-                decisions.append(FilterDecision(
+                decision_map[_f.metadata.path] = FilterDecision(
                     action=FilterAction.KEEP,
                     confidence=0.75,
                     reason=f"{'Newest' if self.prefer_newest else 'Oldest'} mtime: {mtime}",
                     filter_name=self.name
-                ))
+                )
             else:
-                decisions.append(FilterDecision(
-                    action=FilterAction.DELETE,
-                    confidence=0.6,
+                decision_map[_f.metadata.path] = FilterDecision(
+                    action=FilterAction.SKIP,
+                    confidence=0.0,
                     reason=f"Older mtime: {mtime}",
                     filter_name=self.name
-                ))
-        return decisions
+                )
+
+        # Return in original order
+        return [decision_map[f.metadata.path] for f in group.files]
 
     def get_params(self) -> dict:
         return {"prefer_newest": self.prefer_newest}
@@ -336,14 +360,14 @@ class OwnerFilter:
     def evaluate(self, group: DuplicateGroup) -> list[FilterDecision]:
         decisions = []
         for f in group.files:
-            uid_match = f.uid in self.preferred_uids
-            gid_match = f.gid in self.preferred_gids
+            uid_match = f.metadata.uid in self.preferred_uids
+            gid_match = f.metadata.gid in self.preferred_gids
 
             if uid_match or gid_match:
                 decisions.append(FilterDecision(
                     action=FilterAction.KEEP,
                     confidence=0.8,
-                    reason=f"Preferred owner (uid={f.uid}, gid={f.gid})",
+                    reason=f"Preferred owner (uid={f.metadata.uid}, gid={f.metadata.gid})",
                     filter_name=self.name
                 ))
             else:
@@ -393,17 +417,17 @@ class FilterPipeline:
         First filter with KEEP/DELETE wins for that file.
         """
         # Track undecided files
-        undecided = {f.path: f for f in group.files}
+        undecided = {f.metadata.path: f for f in group.files}
         final_actions = {}
 
         for filter in self.filters:
             decisions = filter.evaluate(group)
             for i, decision in enumerate(decisions):
                 f = group.files[i]
-                if f.path in undecided:
+                if f.metadata.path in undecided:
                     if decision.action in (FilterAction.KEEP, FilterAction.DELETE):
-                        final_actions[f.path] = decision.action
-                        del undecided[f.path]
+                        final_actions[f.metadata.path] = decision.action
+                        del undecided[f.metadata.path]
 
         # Remaining undecided = SKIP
         for path in undecided:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DataWarden - Snapshot Manager (STUB)
+DataWarden - Snapshot Manager
 Transactional snapshots with rollback and retention.
 """
 
@@ -10,6 +10,7 @@ import json
 import os
 import shutil
 import time
+import uuid
 from pathlib import Path
 
 from core.models import ExecutionMode, Snapshot
@@ -18,38 +19,35 @@ from core.models import ExecutionMode, Snapshot
 class SnapshotManager:
     """Manages transactional snapshots for undo/redo."""
 
-    def __init__(self, quarantine_root: Path, snapshots_dir: Path, max_size_gb: float = 10.0, max_count: int = 5):
-        self.quarantine_root = Path(quarantine_root)
-        self.snapshots_dir = Path(snapshots_dir)
+    def __init__(
+        self,
+        quarantine_root: str = "~/.datawarden/quarantine",
+        max_size_gb: float = 10.0,
+        max_count: int = 100,
+    ):
+        self.quarantine_root = Path(quarantine_root).expanduser()
+        self.snapshots_dir = self.quarantine_root / "snapshots"
+        self.snapshots_dir.mkdir(parents=True, exist_ok=True)
         self.max_size_gb = max_size_gb
         self.max_count = max_count
 
-        self.quarantine_root.mkdir(parents=True, exist_ok=True)
-        self.snapshots_dir.mkdir(parents=True, exist_ok=True)
-
-    def create_snapshot(self,
-                       mode: ExecutionMode,
-                       file_operations: list[tuple[str, str]],  # (source, destination) or (source, "DELETED:...")
-                       filter_config_hash: str,
-                       description: str = "") -> Snapshot:
-        """Create a new snapshot from file operations."""
-        snapshot_id = f"snap_{int(time.time() * 1000)}"
+    def create_snapshot(
+        self,
+        mappings: dict[str, str],
+        mode: ExecutionMode,
+        filter_config_hash: str = "",
+        description: str = "",
+    ) -> Snapshot:
+        """Create a new snapshot with the given mappings."""
+        snapshot_id = f"snap_{int(time.time() * 1000)}_{uuid.uuid4().hex[:8]}"
         timestamp = time.time()
 
-        mappings = {}
+        # Calculate total size
         total_size = 0
-
-        for src, dst in file_operations:
-            src_path = Path(src)
-            if src_path.exists():
-                size = src_path.stat().st_size
-                total_size += size
-
-            if dst.startswith("DELETED:"):
-                mappings[dst] = src
-            else:
-                # For safe_move: dst is quarantine path, src is original
-                mappings[str(dst)] = src
+        for qpath in mappings.keys():
+            qfile = Path(qpath)
+            if qfile.exists() and not str(qpath).startswith("DELETED:") and not str(qpath).startswith("AUDIT_LOG_ONLY:"):
+                total_size += qfile.stat().st_size
 
         snapshot = Snapshot(
             id=snapshot_id,
@@ -58,7 +56,7 @@ class SnapshotManager:
             mappings=mappings,
             total_size=total_size,
             filter_config_hash=filter_config_hash,
-            description=description
+            description=description,
         )
 
         self._save_snapshot(snapshot)
@@ -78,8 +76,8 @@ class SnapshotManager:
             "filter_config_hash": snapshot.filter_config_hash,
             "description": snapshot.description,
         }
-        with open(snap_file, 'w'):
-            json.dump(data, indent=2)
+        with open(snap_file, "w") as f:
+            json.dump(data, f, indent=2)
 
     def rollback(self, snapshot_id: str) -> dict[str, bool]:
         """Rollback a snapshot - restore files to original locations."""
@@ -92,6 +90,11 @@ class SnapshotManager:
 
         results = {}
         for quarantine_path, original_path in data["mappings"].items():
+            if quarantine_path.startswith("DELETED:") or quarantine_path.startswith("AUDIT_LOG_ONLY:"):
+                # Can't rollback hard deletes or audit logs
+                results[original_path] = False
+                continue
+
             qpath = Path(quarantine_path)
             opath = Path(original_path)
 
@@ -119,7 +122,7 @@ class SnapshotManager:
 
         # Check size limit
         total_size = sum(s.total_size for s in snapshots)
-        max_bytes = self.max_size_gb * 1024 * 1024 * 1024
+        max_bytes = int(self.max_size_gb * 1024 * 1024 * 1024)
 
         while total_size > max_bytes and snapshots:
             oldest = snapshots[0]
@@ -138,6 +141,8 @@ class SnapshotManager:
 
         # Delete quarantine files
         for qpath in data["mappings"].keys():
+            if qpath.startswith("DELETED:") or qpath.startswith("AUDIT_LOG_ONLY:"):
+                continue
             qfile = Path(qpath)
             if qfile.exists():
                 try:
@@ -162,7 +167,7 @@ class SnapshotManager:
                     mappings=data["mappings"],
                     total_size=data["total_size"],
                     filter_config_hash=data["filter_config_hash"],
-                    description=data.get("description", "")
+                    description=data.get("description", ""),
                 ))
             except Exception:
                 continue
@@ -183,7 +188,7 @@ class SnapshotManager:
             mappings=data["mappings"],
             total_size=data["total_size"],
             filter_config_hash=data["filter_config_hash"],
-            description=data.get("description", "")
+            description=data.get("description", ""),
         )
 
     def get_quarantine_usage(self) -> tuple[int, int]:
