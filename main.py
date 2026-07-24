@@ -35,6 +35,7 @@ from core.i18n import I18nManager
 from core.indexer import Indexer, IndexWriter, SavestateManager
 from core.models import ScanConfig, SymlinkMode
 from ui.components import (
+    CommanderTree,
     DuplicateTable,
     LogPanel,
     SettingsPane,
@@ -334,7 +335,14 @@ class DataWardenApp(App):
 
                 # Commander Screen
                 with Container(id="commander-screen", classes="screen hidden"):
-                    yield Static("Commander Workspace", id="cmd-placeholder")
+                    with Horizontal(id="commander-panes"):
+                        yield CommanderTree(path=str(Path.home()), id="cmd-left", classes="commander-pane")
+                        yield CommanderTree(path=str(Path.home()), id="cmd-right", classes="commander-pane")
+                    # Bottom panels - will be hidden/shown based on tabs
+                    with Container(id="commander-bottom", classes="hidden"):
+                        with Horizontal():
+                            yield DuplicateTable(id="cmd-duplicate-table")
+                            yield LogPanel(id="cmd-log-panel")
 
                 # Warden Screen
                 with Container(id="warden-screen", classes="screen hidden"):
@@ -411,6 +419,15 @@ class DataWardenApp(App):
         """Initialize the Commander layout using LayoutManager."""
         if not self.workspace.root:
             self.workspace.create_default_layout()
+
+        # Update CommanderTree paths and reload
+        left_tree = self.query_one("#cmd-left", CommanderTree)
+        right_tree = self.query_one("#cmd-right", CommanderTree)
+        if left_tree and right_tree:
+            left_tree.path = str(Path.home())
+            right_tree.path = str(Path.home())
+            left_tree.reload()
+            right_tree.reload()
 
     # --- Event Handlers ---
 

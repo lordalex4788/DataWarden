@@ -88,6 +88,7 @@ class LayoutManager:
         self.root: SplitNode | LeafNode | None = None
         self.layout_file = Path("config/layout.json")
         self._pane_widgets: dict[str, Widget] = {}
+        self._pane_nodes: dict[str, LeafNode] = {}  # Track pane_id -> LeafNode mapping
 
     def create_default_layout(self) -> SplitNode:
         """Create the default 2-pane Commander layout."""
@@ -256,6 +257,70 @@ class LayoutManager:
             return SplitNode.from_dict(data)
         else:
             return LeafNode.from_dict(data)
+
+    def resize_pane(self, direction: str, delta: int) -> None:
+        """Resize a pane in the given direction.
+
+        direction: "left", "right", "up", "down"
+        delta: size change in percent (positive = grow)
+        """
+        if not self.root:
+            return
+
+        leaves = self.get_all_leaves()
+        if not leaves:
+            return
+
+        # Find the split containing the pane to resize
+        # For left/right: find horizontal split and adjust left/right child
+        # For up/down: find vertical split and adjust top/bottom child
+
+        split_node, child_index = self._find_split_for_direction(self.root, direction)
+        if split_node and isinstance(split_node, SplitNode):
+            delta_ratio = delta / 100.0
+            self.resize_split(split_node, delta_ratio, child_index)
+
+    def _find_split_for_direction(self, node: SplitNode | LeafNode, direction: str) -> tuple[SplitNode | None, int]:
+        """Find the split node and child index for a resize direction."""
+        if isinstance(node, LeafNode):
+            return None, -1
+
+        # Check if this split matches the direction
+        if direction in ("left", "right") and node.direction == SplitDirection.HORIZONTAL:
+            if direction == "left":
+                return node, 0
+            else:
+                return node, 1 if len(node.children) > 1 else 0
+
+        if direction in ("up", "down") and node.direction == SplitDirection.VERTICAL:
+            if direction == "up":
+                return node, 0
+            else:
+                return node, 1 if len(node.children) > 1 else 0
+
+        # Recurse into children
+        for child in node.children:
+            if isinstance(child, SplitNode):
+                result = self._find_split_for_direction(child, direction)
+                if result[0]:
+                    return result
+
+        return None, -1
+
+    def get_tree_representation(self) -> list[str]:
+        """Get text representation of layout tree for debugging."""
+        lines = []
+        self._build_tree_repr(self.root, lines, 0)
+        return lines
+
+    def _build_tree_repr(self, node: SplitNode | LeafNode, lines: list[str], depth: int) -> None:
+        indent = "  " * depth
+        if isinstance(node, LeafNode):
+            lines.append(f"{indent}└─ [{node.pane.widget_type}] {node.pane.title}")
+        else:
+            lines.append(f"{indent}├─ {node.direction.value} {node.sizes}")
+            for child in node.children:
+                self._build_tree_repr(child, lines, depth + 1)
 
 
 class ThemeManager:

@@ -39,6 +39,22 @@ with a custom scheme: `0.05.10` → `0.05.20` → ... → `0.05.90` → `0.10.10
 
 ---
 
+## [0.05.60] - 2026-07-24 20:00:00
+
+### UI
+* **Commander UI & Workspace** (`ui/workspace.py`, `ui/components.py`, `main.py`):
+  * `LayoutManager`: Binary split tree (HorizontalSplit/VerticalSplit), dynamic resize, persist/restore layout to `config/layout.json`
+  * `ThemeManager`: 4 builtin themes (dark, light, nord, dracula) + custom themes with live reload via TCSS
+  * `CommanderTree` (MC-style): F5 Copy, F6 Move, F7 Mkdir, F8 Delete, F4 Edit ($EDITOR), Space/Insert selection, Enter CD
+  * **Pane Components**: DuplicateTable, LogPanel (tree expand/collapse), DescriptionPane, SettingsPane, FilterPane, ShellPane (async subprocess), GrepPanel (async search), HexDebugPanel (hex dump + ASCII, magic bytes), NotePane, WardenDashboard (incident stream)
+  * **Modals**: ConfirmationModal (N-level, hotkeys), AISuggestionModal (apply/dismiss), InitialSnapshotModal, RelaxTrustModal (typed "RELAX_TRUST")
+  * **Main App**: 9 screens with navigation (F1-F9), Ctrl+Arrows for pane resize, dynamic commander layout with dual trees + bottom panels
+
+### Tests
+* All 175 unit tests passing across core modules
+
+---
+
 ## [0.05.50] - 2026-07-24 18:30:00
 
 ### Core
