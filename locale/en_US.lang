@@ -1,0 +1,707 @@
+# [Main Menu]
+# Descriptor: Title of the main menu indexing item
+menu_indexing_title = "Indexing"
+
+# [Main Menu]
+# Descriptor: Title of the main menu compare item
+menu_compare_title = "Compare"
+
+# [Main Menu]
+# Descriptor: Title of the main menu select item
+menu_select_title = "Auto-Select"
+
+# [Main Menu]
+# Descriptor: Title of the main menu execute item
+menu_execute_title = "Execute"
+
+# [Main Menu]
+# Descriptor: Title of the main menu settings item
+menu_settings_title = "Settings"
+
+# [Main Menu]
+# Descriptor: Title of the main menu commander item
+menu_commander_title = "Commander"
+
+# [Main Menu]
+# Descriptor: Title of the main menu warden item
+menu_warden_title = "Warden"
+
+# [Main Menu]
+# Descriptor: Title of the main menu notes item
+menu_notes_title = "Notes"
+
+# [Indexing Screen]
+# Descriptor: Description text explaining the indexing process and settings
+desc_indexing_intro = "Indexing starts here. Select drive/folder, min/max filesize, and filetypes. All metadata (hash, path, permissions, timestamps, owner) will be recorded. Indexes are written as split JSONL files for crash resilience. Savestate enables resume after crash."
+
+# [Indexing Screen]
+# Descriptor: Label for root path selection
+indexing_label_root = "Root Path / Drive:"
+
+# [Indexing Screen]
+# Descriptor: Placeholder for root path input
+indexing_placeholder_root = "e.g. /mnt/data or C:\\"
+
+# [Indexing Screen]
+# Descriptor: Label for minimum file size
+indexing_label_min_size = "Min File Size:"
+
+# [Indexing Screen]
+# Descriptor: Label for maximum file size
+indexing_label_max_size = "Max File Size:"
+
+# [Indexing Screen]
+# Descriptor: Label for file type whitelist
+indexing_label_whitelist = "Whitelist Extensions (comma-separated):"
+
+# [Indexing Screen]
+# Descriptor: Placeholder for whitelist
+indexing_placeholder_whitelist = "e.g. .jpg,.png,.mp3 (empty = all)"
+
+# [Indexing Screen]
+# Descriptor: Label for file type blacklist
+indexing_label_blacklist = "Blacklist Extensions (comma-separated):"
+
+# [Indexing Screen]
+# Descriptor: Placeholder for blacklist
+indexing_placeholder_blacklist = "e.g. .tmp,.bak,.log (empty = none)"
+
+# [Indexing Screen]
+# Descriptor: Label for symlink handling mode
+indexing_label_symlinks = "Symlink Handling:"
+
+# [Indexing Screen]
+# Descriptor: Option: Ignore symlinks completely
+indexing_symlink_ignore = "IGNORE (skip symlinks)"
+
+# [Indexing Screen]
+# Descriptor: Option: Follow symlinks and hash target
+indexing_symlink_follow = "FOLLOW (hash target, loop protection)"
+
+# [Indexing Screen]
+# Descriptor: Option: Record symlink only, don't hash target
+indexing_symlink_record = "RECORD_ONLY (index link + target path)"
+
+# [Indexing Screen]
+# Descriptor: Checkbox for hardlink detection
+indexing_check_hardlinks = "Detect Hardlinks (inode tracking)"
+
+# [Indexing Screen]
+# Descriptor: Checkbox to treat hardlinks as duplicates
+indexing_check_hardlinks_dupes = "Treat Hardlinks as Duplicates"
+
+# [Indexing Screen]
+# Descriptor: Label for maximum scan depth
+indexing_label_max_depth = "Max Scan Depth (0 = unlimited):"
+
+# [Indexing Screen]
+# Descriptor: Button to start indexing
+indexing_btn_start = "Start Indexing"
+
+# [Indexing Screen]
+# Descriptor: Button to pause indexing
+indexing_btn_pause = "Pause"
+
+# [Indexing Screen]
+# Descriptor: Button to resume indexing
+indexing_btn_resume = "Resume"
+
+# [Indexing Screen]
+# Descriptor: Button to cancel indexing
+indexing_btn_cancel = "Cancel"
+
+# [Indexing Screen]
+# Descriptor: Label showing current folder being scanned
+indexing_status_folder = "Current Folder: {path}"
+
+# [Indexing Screen]
+# Descriptor: Label showing files processed
+indexing_status_files = "Files: {done}/{total}"
+
+# [Indexing Screen]
+# Descriptor: Label showing current file being hashed
+indexing_status_current = "Hashing: {file}"
+
+# [Indexing Screen]
+# Descriptor: Label showing scan speed
+indexing_status_speed = "Speed: {files_sec} files/s, {mb_sec} MB/s"
+
+# [Indexing Screen]
+# Descriptor: Label showing estimated time remaining
+indexing_status_eta = "ETA: {eta}"
+
+# [Indexing Screen]
+# Descriptor: Label showing file type statistics
+indexing_stats_types = "File Types: {breakdown}"
+
+# [Indexing Screen]
+# Descriptor: Label showing total folder size
+indexing_stats_total_size = "Total Size: {size}"
+
+# [Indexing Screen]
+# Descriptor: Label showing path length warnings
+indexing_warn_path_len = "Paths > 255 chars: {count} (marked yellow in tree)"
+
+# [Indexing Screen]
+# Descriptor: Label showing errors count
+indexing_status_errors = "Errors: {count}"
+
+# [Comparison Screen]
+# Descriptor: Title of the comparison/duplicate search screen
+compare_title = "Cross-Reference & Duplicate Search"
+
+# [Comparison Screen]
+# Descriptor: Description of comparison modes
+compare_description = "Select search mode: Intra-Folder (within one index) or Inter-Folder (across multiple indexes). Reference folders are never marked for deletion."
+
+# [Comparison Screen]
+# Descriptor: Radio button for intra-folder search
+compare_mode_intra = "Intra-Folder (single index vs itself)"
+
+# [Comparison Screen]
+# Descriptor: Radio button for inter-folder search
+compare_mode_inter = "Inter-Folder (cross multiple indexes)"
+
+# [Comparison Screen]
+# Descriptor: Label for reference folder selection
+compare_label_ref_folders = "Reference Folders (protected):"
+
+# [Comparison Screen]
+# Descriptor: Label for target folder selection
+compare_label_target_folders = "Target Folders (to scan):"
+
+# [Comparison Screen]
+# Descriptor: Button to start comparison
+compare_btn_start = "Start Comparison"
+
+# [Comparison Screen]
+# Descriptor: Label showing duplicate groups found
+compare_result_groups = "Duplicate Groups: {count}"
+
+# [Comparison Screen]
+# Descriptor: Label showing total wasted space
+compare_result_wasted = "Wasted Space: {size}"
+
+# [Comparison Screen]
+# Descriptor: Label showing reference-protected files
+compare_result_ref_protected = "Reference-Protected: {count}"
+
+# [Selection Screen]
+# Descriptor: Title of the auto-select filter configuration screen
+select_title = "Smart Selection (Auto-Select)"
+
+# [Selection Screen]
+# Descriptor: Description of the cascading filter pipeline
+select_description = "Define a cascade of filters. Filter 1 decides, on tie Filter 2, etc. Condition Zero: Hash & Size must be 100% identical."
+
+# [Selection Screen]
+# Descriptor: Label for filter pipeline list
+select_label_pipeline = "Filter Pipeline (Order = Priority):"
+
+# [Selection Screen]
+# Descriptor: Button to add a new filter to pipeline
+select_btn_add_filter = "Add Filter"
+
+# [Selection Screen]
+# Descriptor: Button to remove selected filter
+select_btn_remove_filter = "Remove Filter"
+
+# [Selection Screen]
+# Descriptor: Button to move filter up in priority
+select_btn_move_up = "Move Up"
+
+# [Selection Screen]
+# Descriptor: Button to move filter down in priority
+select_btn_move_down = "Move Down"
+
+# [Selection Screen]
+# Descriptor: Filter type: Path Priority (prefer reference paths)
+select_filter_path_priority = "Path Priority (Prefer Reference Paths)"
+
+# [Selection Screen]
+# Descriptor: Filter type: Filename Hygiene (regex scoring)
+select_filter_filename_hygiene = "Filename Hygiene (Regex Score: No Spaces, Umlauts, Special Chars)"
+
+# [Selection Screen]
+# Descriptor: Filter type: Artifact Detection (suffixes like _copy, (1))
+select_filter_artifact = "Artifact Detection (_copy, (1), -Copy, _v2...)"
+
+# [Selection Screen]
+# Descriptor: Filter type: Path Depth (shallower preferred)
+select_filter_path_depth = "Path Depth (Shallower = Original)"
+
+# [Selection Screen]
+# Descriptor: Filter type: Timestamp (newest/oldest)
+select_filter_timestamp = "Timestamp (Newest/Oldest)"
+
+# [Selection Screen]
+# Descriptor: Filter type: Owner/UID preference
+select_filter_owner = "Owner/UID Preference"
+
+# [Selection Screen]
+# Descriptor: Button to run auto-selection on current duplicate groups
+select_btn_run = "Run Auto-Selection"
+
+# [Selection Screen]
+# Descriptor: Label showing selection results
+select_result_summary = "Marked to Keep: {keep} | To Delete: {delete} | Tied: {skip}"
+
+# [Execution Screen]
+# Descriptor: Title of the execution screen
+execute_title = "Execution & Snapshots"
+
+# [Execution Screen]
+# Descriptor: Radio button for Audit Mode (dry run)
+execute_mode_audit = "Audit Mode (Dry-Run, Log Only)"
+
+# [Execution Screen]
+# Descriptor: Radio button for Safe Move Mode (quarantine)
+execute_mode_safe = "Safe Move Mode (Quarantine + Undo)"
+
+# [Execution Screen]
+# Descriptor: Radio button for Hard Delete Mode
+execute_mode_hard = "Hard Delete (Permanent)"
+
+# [Execution Screen]
+# Descriptor: Label for quarantine directory path
+execute_label_quarantine = "Quarantine Directory:"
+
+# [Execution Screen]
+# Descriptor: Checkbox to create initial snapshot before first execution
+execute_check_initial_snapshot = "Create Initial Snapshot Before First Execution"
+
+# [Execution Screen]
+# Descriptor: Warning text for initial snapshot
+execute_warn_initial_snapshot = "WARNING: Initial Snapshot backs up ENTIRE state. Requires significant space and time. Only recommended for critical data."
+
+# [Execution Screen]
+# Descriptor: Button to confirm and execute
+execute_btn_confirm = "Execute (Confirmation Required)"
+
+# [Execution Screen]
+# Descriptor: Button to rollback last snapshot
+execute_btn_rollback = "Rollback Last Snapshot (Undo)"
+
+# [Execution Screen]
+# Descriptor: Label showing snapshot retention policy
+execute_label_retention = "Retention: Max {count} Snapshots / {gb} GB"
+
+# [Settings Screen]
+# Descriptor: Title of the settings screen
+settings_title = "Settings"
+
+# [Settings Screen]
+# Descriptor: Section for UI/Theming settings
+settings_section_ui = "UI & Theming"
+
+# [Settings Screen]
+# Descriptor: Label for theme selection
+settings_label_theme = "Color Theme:"
+
+# [Settings Screen]
+# Descriptor: Label for language selection
+settings_label_language = "Language:"
+
+# [Settings Screen]
+# Descriptor: Section for Confirmation Engine settings
+settings_section_confirm = "Confirmation Engine (Security)"
+
+# [Settings Screen]
+# Descriptor: Label for confirmation levels count
+settings_label_confirm_levels = "Confirmation Levels (0-5):"
+
+# [Settings Screen]
+# Descriptor: Label for hotkey configuration per level
+settings_label_confirm_hotkeys = "Hotkeys Per Level (comma-separated):"
+
+# [Settings Screen]
+# Descriptor: Explanation text for confirmation vs snapshot storage tradeoff
+settings_explain_confirm_tradeoff = "More confirmation levels = fewer human errors = less quarantine storage needed. Find your balance."
+
+# [Settings Screen]
+# Descriptor: Section for AI/LLM settings
+settings_section_ai = "AI Integration (Local via Ollama)"
+
+# [Settings Screen]
+# Descriptor: Checkbox to enable AI features
+settings_check_ai_enabled = "Enable AI Features"
+
+# [Settings Screen]
+# Descriptor: Label for Ollama API endpoint
+settings_label_ollama_url = "Ollama API URL:"
+
+# [Settings Screen]
+# Descriptor: Label for model selection
+settings_label_ai_model = "Model:"
+
+# [Settings Screen]
+# Descriptor: Label for Global Trust Level slider
+settings_label_trust_level = "Global AI Trust Level:"
+
+# [Settings Screen]
+# Descriptor: Trust Level 0 description
+settings_trust_0 = "STRICT_ZERO_TRUST: AI Passive Only (Explanations), No Actions"
+
+# [Settings Screen]
+# Descriptor: Trust Level 1 description
+settings_trust_1 = "LAYOUT_ONLY: AI May Adjust Layouts (Pane Split/Resize)"
+
+# [Settings Screen]
+# Descriptor: Trust Level 2 description
+settings_trust_2 = "ASSISTED_LOGIC: AI May Propose Filters (Confirmation Required)"
+
+# [Settings Screen]
+# Descriptor: Trust Level 3 description
+settings_trust_3 = "COLLABORATIVE_EXECUTE: AI May Activate Filters & Sort (Delete Always Human)"
+
+# [Settings Screen]
+# Descriptor: Section for Bundle Gatekeepers
+settings_section_bundles = "Function Bundle Gatekeepers (Per-Area AI Permissions)"
+
+# [Settings Screen]
+# Descriptor: Bundle: UI/Layout
+settings_bundle_ui = "UI/Layout"
+
+# [Settings Screen]
+# Descriptor: Bundle: Filter/Pipelines
+settings_bundle_filters = "Filter/Pipelines"
+
+# [Settings Screen]
+# Descriptor: Bundle: File Metadata/Sorting
+settings_bundle_files = "File Metadata/Sorting"
+
+# [Settings Screen]
+# Descriptor: Bundle: Governance/Warden
+settings_bundle_governance = "Governance/Warden"
+
+# [Settings Screen]
+# Descriptor: Warning when disabling zero trust
+settings_warn_relax_trust = "WARNING: Disabling Zero-Trust allows AI autonomous changes. Only use if you fully trust the local model. Confirmation: Type 'RELAX_TRUST'."
+
+# [Settings Screen]
+# Descriptor: Section for Error Handling rules
+settings_section_errors = "Error Handling"
+
+# [Settings Screen]
+# Descriptor: Label for permission denied handling
+settings_label_err_perm = "Permission Denied:"
+
+# [Settings Screen]
+# Descriptor: Label for file locked handling
+settings_label_err_locked = "File Locked:"
+
+# [Settings Screen]
+# Descriptor: Label for corrupt metadata handling
+settings_label_err_corrupt = "Corrupt Metadata:"
+
+# [Settings Screen]
+# Descriptor: Option: Ask user interactively
+settings_err_ask = "Ask (Modal: Skip/Retry/Skip All)"
+
+# [Settings Screen]
+# Descriptor: Option: Auto skip and log
+settings_err_auto_skip = "Auto Skip & Log"
+
+# [Settings Screen]
+# Descriptor: Option: Retry N times
+settings_err_retry = "Retry (N Times):"
+
+# [Commander / File Manager]
+# Descriptor: Title of the Commander pane
+commander_title = "File Commander (MC-Style)"
+
+# [Commander / File Manager]
+# Descriptor: Hint bar showing function keys
+commander_hint_bar = "F3:View F4:Edit F5:Copy F6:Move F7:Mkdir F8:Delete Enter:Open"
+
+# [Commander / File Manager]
+# Descriptor: Label for grep/search panel
+commander_label_grep = "Grep Search (Content):"
+
+# [Commander / File Manager]
+# Descriptor: Placeholder for grep input
+commander_placeholder_grep = "Search term or regex..."
+
+# [Commander / File Manager]
+# Descriptor: Label for shell command line
+commander_label_shell = "Shell:"
+
+# [Commander / File Manager]
+# Descriptor: Placeholder for shell input
+commander_placeholder_shell = "Enter command (e.g. chmod +x script.sh)..."
+
+# [Commander / File Manager]
+# Descriptor: Label for hex editor panel
+commander_label_hex = "Hex Editor"
+
+# [Warden / Governance]
+# Descriptor: Title of the Warden dashboard
+warden_title = "FileSystem Warden (Live Governance)"
+
+# [Warden / Governance]
+# Descriptor: Description of warden functionality
+warden_description = "Monitors defined zones in real-time. Checks new files for: 1) Permissions (Auto-Fix), 2) Naming Conventions (LLM Proposal), 3) Classification. Incidents in Dashboard."
+
+# [Warden / Governance]
+# Descriptor: Label for zone configuration
+warden_label_zones = "Monitored Zones:"
+
+# [Warden / Governance]
+# Descriptor: Button to add new zone
+warden_btn_add_zone = "Add Zone"
+
+# [Warden / Governance]
+# Descriptor: Label for zone path
+warden_label_zone_path = "Path:"
+
+# [Warden / Governance]
+# Descriptor: Label for zone permission mask
+warden_label_zone_perms = "Expected Permissions (e.g. 640):"
+
+# [Warden / Governance]
+# Descriptor: Label for zone naming regex
+warden_label_zone_naming = "Naming Regex (e.g. PROJ_[0-9]{4}_.*):"
+
+# [Warden / Governance]
+# Descriptor: Label for zone classification rules
+warden_label_zone_class = "Classification Rules:"
+
+# [Warden / Governance]
+# Descriptor: Label for incident stream
+warden_label_incidents = "Incident Stream:"
+
+# [Warden / Governance]
+# Descriptor: Label for natural language query line
+warden_label_query = "Query (Natural Language):"
+
+# [Warden / Governance]
+# Descriptor: Placeholder for query input
+warden_placeholder_query = "e.g. 'Where is the spreadsheet with Q2 Revenue from last week?'"
+
+# [Notes System]
+# Descriptor: Title of the notes panel
+notes_title = "Metadata Notes"
+
+# [Notes System]
+# Descriptor: Description of sticky notes system
+notes_description = "Pin notes to paths, files, or UI elements. Tree shows indicator [📝 N]. F12 = Global Archive with Deep-Link."
+
+# [Notes System]
+# Descriptor: Button to create new note at current path
+notes_btn_new = "Create Note Here"
+
+# [Notes System]
+# Descriptor: Label for note content
+notes_label_content = "Content:"
+
+# [Notes System]
+# Descriptor: Button to open global note archive
+notes_btn_archive = "Global Archive (F12)"
+
+# [Confirmation Modals]
+# Descriptor: Title for multi-level confirmation modal
+confirm_title = "Confirmation Required (Level {level}/{total})"
+
+# [Confirmation Modals]
+# Descriptor: Text asking user to press specific hotkey
+confirm_press_key = "Press '{hotkey}' to Continue..."
+
+# [Confirmation Modals]
+# Descriptor: Checkbox to remember this decision for similar cases
+confirm_remember = "Remember This Decision (Auto-Allow for {context} in Future)"
+
+# [Confirmation Modals]
+# Descriptor: Button to skip and abort
+confirm_btn_abort = "Abort"
+
+# [AI Suggestions Modal]
+# Descriptor: Title for AI suggestion modal
+ai_suggest_title = "AI Suggestion"
+
+# [AI Suggestions Modal]
+# Descriptor: Text showing what AI proposes to change
+ai_suggest_description = "AI Proposes: {old} → {new}"
+
+# [AI Suggestions Modal]
+# Descriptor: Button to apply AI suggestion
+ai_suggest_btn_apply = "Apply (Confirmation Required)"
+
+# [AI Suggestions Modal]
+# Descriptor: Button to dismiss AI suggestion
+ai_suggest_btn_dismiss = "Dismiss"
+
+# [Initial Snapshot Modal]
+# Descriptor: Title for initial snapshot prompt
+snapshot_initial_title = "Create Initial Snapshot?"
+
+# [Initial Snapshot Modal]
+# Descriptor: Explanation of initial snapshot
+snapshot_initial_description = "An Initial Snapshot secures the current state of ALL monitored data. This guarantees absolute recoverability but consumes significant space and time. Start now or skip?"
+
+# [Initial Snapshot Modal]
+# Descriptor: Button to create snapshot
+snapshot_initial_btn_yes = "Yes, Create Snapshot"
+
+# [Initial Snapshot Modal]
+# Descriptor: Button to skip snapshot
+snapshot_initial_btn_no = "Skip (Not Recommended)"
+
+# [RELAX_TRUST Modal]
+# Descriptor: Title for zero-trust relaxation confirmation
+relax_trust_title = "⚠️ DISABLE ZERO-TRUST"
+
+# [RELAX_TRUST Modal]
+# Descriptor: Warning text for relaxing trust
+relax_trust_description = "You are about to disable Zero-Trust mode. The AI will then be allowed to make autonomous changes to {bundle}. This may lead to unexpected filter changes on imprecise prompts. Use only if you are fully familiar with the local model's behavior.\n\nConfirmation: Type 'RELAX_TRUST'."
+
+# [RELAX_TRUST Modal]
+# Descriptor: Input placeholder for confirmation word
+relax_trust_placeholder = "RELAX_TRUST"
+
+# [Log Panel]
+# Descriptor: Label for live log panel
+log_title = "Live Log"
+
+# [Log Panel]
+# Descriptor: Tree node for AI auto-executed actions (collapsed)
+log_ai_auto_collapsed = "[+] [AI-AUTO-EXECUTE] {count} Operations Applied via User Whitelist"
+
+# [Log Panel]
+# Descriptor: Tree node for AI auto-executed actions (expanded)
+log_ai_auto_expanded = "[-] [AI-AUTO-EXECUTE] {count} Operations Applied via User Whitelist"
+
+# [Log Panel]
+# Descriptor: Log entry for individual auto-executed action
+log_ai_auto_entry = "[{time}] {filter_type} Applied to {path} (Reason: User Rule from {date})"
+
+# [Description Pane]
+# Descriptor: Title of the contextual description pane
+desc_title = "Description & Help"
+
+# [Description Pane]
+# Descriptor: Default text when no element focused
+desc_default = "Hover over an element or focus via keyboard to see explanation here: What does it do? Why change it? What is it used for?"
+
+# [Status Bar]
+# Descriptor: Status bar mode indicator
+status_mode_audit = "MODE: AUDIT (Read-Only)"
+
+# [Status Bar]
+# Descriptor: Status bar mode indicator
+status_mode_safe = "MODE: SAFE MOVE (Quarantine)"
+
+# [Status Bar]
+# Descriptor: Status bar mode indicator
+status_mode_hard = "MODE: HARD DELETE (WARNING!)"
+
+# [Status Bar]
+# Descriptor: Status bar trust level indicator
+status_trust_level = "AI TRUST: {level_name}"
+
+# [Status Bar]
+# Descriptor: Status bar quarantine usage
+status_quarantine = "QUARANTINE: {used_gb}/{limit_gb} GB"
+
+# [Errors]
+# Descriptor: Error message for permission denied
+err_permission_denied = "Permission Denied: {path}"
+
+# [Errors]
+# Descriptor: Error message for file locked
+err_file_locked = "File Locked by Another Process: {path}"
+
+# [Errors]
+# Descriptor: Error message for symlink loop
+err_symlink_loop = "Symlink Loop Detected: {path} → {target}"
+
+# [Errors]
+# Descriptor: Error message for corrupt metadata
+err_corrupt_metadata = "Corrupt Metadata: {path}"
+
+# [Errors]
+# Descriptor: Error message for IO error
+err_io = "I/O Error: {path} - {detail}"
+
+# [Generic]
+# Descriptor: Generic "Yes" button
+btn_yes = "Yes"
+
+# [Generic]
+# Descriptor: Generic "No" button
+btn_no = "No"
+
+# [Generic]
+# Descriptor: Generic "OK" button
+btn_ok = "OK"
+
+# [Generic]
+# Descriptor: Generic "Cancel" button
+btn_cancel = "Cancel"
+
+# [Generic]
+# Descriptor: Generic "Save" button
+btn_save = "Save"
+
+# [Generic]
+# Descriptor: Generic "Load" button
+btn_load = "Load"
+
+# [Generic]
+# Descriptor: Generic "Delete" button
+btn_delete = "Delete"
+
+# [Generic]
+# Descriptor: Generic "Edit" button
+btn_edit = "Edit"
+
+# [Generic]
+# Descriptor: Generic "Close" button
+btn_close = "Close"
+
+# [Generic]
+# Descriptor: Generic "Back" button
+btn_back = "Back"
+
+# [Generic]
+# Descriptor: Generic "Next" button
+btn_next = "Next"
+
+# [Generic]
+# Descriptor: Generic "Apply" button
+btn_apply = "Apply"
+
+# [Generic]
+# Descriptor: Generic "Reset" button
+btn_reset = "Reset"
+
+# [Generic]
+# Descriptor: Loading spinner text
+loading = "Loading..."
+
+# [Generic]
+# Descriptor: Processing text
+processing = "Processing..."
+
+# [Generic]
+# Descriptor: Done/Complete text
+done = "Done"
+
+# [Generic]
+# Descriptor: Failed text
+failed = "Failed"
+
+# [Generic]
+# Descriptor: Warning prefix
+warning = "WARNING"
+
+# [Generic]
+# Descriptor: Error prefix
+error = "ERROR"
+
+# [Generic]
+# Descriptor: Info prefix
+info = "INFO"
+
+# [Generic]
+# Descriptor: Success prefix
+success = "SUCCESS"

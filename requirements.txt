@@ -1,0 +1,30 @@
+# Core TUI Framework
+textual>=0.47.1
+rich>=13.7.0
+
+# High-Performance Hashing
+xxhash>=3.4.1
+
+# Async I/O
+aiofiles>=23.2.1
+
+# Filesystem Monitoring
+watchdog>=3.0.0
+
+# Data Processing (optional, for Polars/SQLite fallback)
+# polars>=1.0.0
+
+# Configuration
+# pydantic>=2.0.0  # if needed for config validation
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+hypothesis>=6.90.0
+
+# Linting & Type Checking
+ruff>=0.1.0
+mypy>=1.5.0
+
+# Development
+# ipython>=8.15.0

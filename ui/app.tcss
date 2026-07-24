@@ -1,0 +1,480 @@
+/* DataWarden - Main TCSS Stylesheet */
+/* =============================================================================
+   CSS Variables (Theming)
+   ============================================================================= */
+
+Screen {
+    /* Base colors - overridden by ThemeManager */
+    background: #1e1e2e;
+    surface: #282a36;
+    primary: #bd93f9;
+    secondary: #6272a4;
+    accent: #50fa7b;
+    warning: #ffb86c;
+    error: #ff5555;
+    text: #f8f8f2;
+    text-muted: #6272a4;
+    border: #44475a;
+    
+    /* Semantic colors */
+    reference-green: #50fa7b;
+    warning-yellow: #ffb86c;
+    error-red: #ff5555;
+    ai-cyan: #8be9fd;
+    
+    /* Spacing */
+    spacing-xs: 1;
+    spacing-sm: 2;
+    spacing-md: 3;
+    spacing-lg: 4;
+}
+
+/* =============================================================================
+   Layout & Containers
+   ============================================================================= */
+
+#main-container {
+    layout: horizontal;
+    height: 1fr;
+}
+
+#sidebar {
+    width: 25;
+    height: 1fr;
+    background: $surface;
+    border-right: solid $border;
+    padding: 1;
+    overflow-y: auto;
+}
+
+#content-area {
+    width: 1fr;
+    height: 1fr;
+    background: $background;
+}
+
+.screen {
+    height: 1fr;
+    overflow-y: auto;
+    padding: 1;
+}
+
+.screen.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   Navigation Sidebar
+   ============================================================================= */
+
+#app-title {
+    text-style: bold;
+    color: $primary;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+#app-subtitle {
+    color: $text-muted;
+    text-align: center;
+    margin-bottom: 2;
+}
+
+.nav-button {
+    width: 100%;
+    margin: 1 0;
+    background: transparent;
+    border: solid $border;
+    color: $text;
+}
+
+.nav-button:hover {
+    background: $primary;
+    color: $background;
+}
+
+.nav-button.active {
+    background: $primary;
+    color: $background;
+    border: solid $accent;
+}
+
+/* =============================================================================
+   Forms & Inputs
+   ============================================================================= */
+
+.screen-title {
+    text-style: bold;
+    color: $primary;
+    margin-bottom: 1;
+}
+
+.screen-description {
+    color: $text-muted;
+    margin-bottom: 2;
+}
+
+.section-title {
+    text-style: bold;
+    color: $accent;
+    margin: 2 0 1 0;
+}
+
+.form-group {
+    margin: 1 0;
+}
+
+.form-row {
+    layout: horizontal;
+    height: auto;
+}
+
+.half {
+    width: 1fr;
+}
+
+.form-group label {
+    color: $text;
+    margin-bottom: 1;
+}
+
+Input {
+    background: $surface;
+    border: solid $border;
+    color: $text;
+}
+
+Input:focus {
+    border: solid $primary;
+}
+
+Select {
+    background: $surface;
+    border: solid $border;
+    color: $text;
+}
+
+Select:focus {
+    border: solid $primary;
+}
+
+.button-row {
+    layout: horizontal;
+    margin-top: 2;
+}
+
+.button-row Button {
+    margin-right: 1;
+}
+
+/* =============================================================================
+   Progress Area
+   ============================================================================= */
+
+.progress-area {
+    margin-top: 2;
+    padding: 1;
+    background: $surface;
+    border: solid $border;
+}
+
+.progress-area.hidden {
+    display: none;
+}
+
+.progress-line {
+    color: $text;
+    margin: 0;
+}
+
+.progress-line.warning {
+    color: $warning;
+}
+
+.progress-line.error {
+    color: $error;
+}
+
+/* =============================================================================
+   Results Areas
+   ============================================================================= */
+
+.results-area {
+    margin-top: 2;
+}
+
+.results-area.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   Commander / File Manager
+   ============================================================================= */
+
+#commander-panes {
+    layout: horizontal;
+    height: 1fr;
+}
+
+.commander-pane {
+    width: 1fr;
+    height: 1fr;
+    border: solid $border;
+}
+
+.hint-bar {
+    color: $text-muted;
+    text-align: center;
+    margin-bottom: 1;
+    padding: 1;
+    background: $surface;
+    border: solid $border;
+}
+
+.panel {
+    height: 20;
+    border: solid $border;
+    background: $surface;
+}
+
+.panel.hidden {
+    display: none;
+}
+
+/* =============================================================================
+   DataTable Styling
+   ============================================================================= */
+
+DataTable {
+    background: $surface;
+    color: $text;
+}
+
+DataTable > .datatable--header {
+    background: $primary;
+    color: $background;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: $accent;
+    color: $background;
+}
+
+DataTable > .datatable--even-row {
+    background: $surface;
+}
+
+DataTable > .datatable--odd-row {
+    background: $background;
+}
+
+/* =============================================================================
+   RichLog / Log Panel
+   ============================================================================= */
+
+RichLog {
+    background: $surface;
+    color: $text;
+    border: solid $border;
+}
+
+/* =============================================================================
+   Modals
+   ============================================================================= */
+
+.modal-screen {
+    align: center middle;
+}
+
+.modal-container {
+    width: 80;
+    max-width: 100;
+    height: auto;
+    max-height: 80%;
+    background: $surface;
+    border: thick $primary;
+    padding: 2;
+    overflow-y: auto;
+}
+
+.modal-title {
+    text-style: bold;
+    color: $error;
+    text-align: center;
+    margin-bottom: 1;
+}
+
+.modal-warning {
+    color: $warning;
+    text-style: bold;
+    margin: 1 0;
+}
+
+.modal-text {
+    color: $text;
+    margin: 1 0;
+}
+
+.modal-hotkey {
+    color: $accent;
+    text-style: bold;
+    margin: 1 0;
+}
+
+.modal-buttons {
+    layout: horizontal;
+    margin-top: 2;
+}
+
+.modal-buttons Button {
+    margin: 0 1;
+}
+
+/* =============================================================================
+   Status Bar
+   ============================================================================= */
+
+Footer {
+    background: $surface;
+    color: $text;
+    border-top: solid $border;
+}
+
+/* =============================================================================
+   Tree Widget
+   ============================================================================= |
+
+Tree {
+    background: $surface;
+    color: $text;
+}
+
+Tree > .tree--cursor {
+    background: $primary;
+    color: $background;
+}
+
+Tree > .tree--guides {
+    color: $border;
+}
+
+/* =============================================================================
+   Collapsible
+   ============================================================================= |
+
+Collapsible {
+    border: solid $border;
+    background: $surface;
+}
+
+Collapsible > .collapsible--title {
+    background: $primary;
+    color: $background;
+    text-style: bold;
+}
+
+/* =============================================================================
+   TabbedContent
+   ============================================================================= |
+
+TabbedContent {
+    background: $surface;
+}
+
+TabbedContent > .tabbed-content--tabs {
+    background: $background;
+    border-bottom: solid $border;
+}
+
+TabbedContent > .tabbed-content--tabs Button {
+    color: $text-muted;
+}
+
+TabbedContent > .tabbed-content--tabs Button.-active {
+    color: $primary;
+    text-style: bold;
+    border-bottom: solid $primary;
+}
+
+/* =============================================================================
+   Special Colors for Status
+   ============================================================================= |
+
+.reference-file {
+    color: $reference-green;
+    text-style: bold;
+}
+
+.warning-text {
+    color: $warning-yellow;
+}
+
+.error-text {
+    color: $error-red;
+}
+
+.ai-auto-text {
+    color: $ai-cyan;
+}
+
+/* =============================================================================
+   Progress Bar
+   ============================================================================= |
+
+ProgressBar {
+    background: $surface;
+    color: $accent;
+}
+
+ProgressBar > .progress-bar--bar {
+    background: $primary;
+}
+
+/* =============================================================================
+   Sparkline
+   ============================================================================= |
+
+Sparkline {
+    color: $accent;
+}
+
+/* =============================================================================
+   Scrollbar
+   ============================================================================= |
+
+Scrollbar {
+    background: $background;
+    color: $primary;
+}
+
+/* =============================================================================
+   Selection
+   ============================================================================= |
+
+.selected {
+    background: $primary;
+    color: $background;
+}
+
+/* =============================================================================
+   Focus Styles
+   ============================================================================= |
+
+*:focus {
+    border: solid $primary;
+}
+
+/* =============================================================================
+   Animation
+   ============================================================================= |
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.pulsing {
+    animation: pulse 1s infinite;
+}
