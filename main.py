@@ -26,6 +26,7 @@ from textual.widgets import (
     Label,
     Select,
     Static,
+    TextArea,
 )
 
 from core.i18n import I18nManager
@@ -304,14 +305,14 @@ class DataWardenApp(App):
                     yield Input(placeholder=self.i18n.t("warden_placeholder_query"), id="warden-query-input")
                     yield Button("Suchen", id="warden-query-search", variant="primary")
 
-                # Notes Screen
+# Notes Screen
                 with Container(id="notes-screen", classes="screen hidden"):
                     yield Static(self.i18n.t("notes_title"), classes="screen-title")
                     yield Static(self.i18n.t("notes_description"), classes="screen-description")
 
                     yield Button(self.i18n.t("notes_btn_new"), id="notes-new", variant="primary")
                     yield Label(self.i18n.t("notes_label_content"))
-                    yield Input(id="notes-content", multiline=True)
+                    yield TextArea(id="notes-content")
                     yield Button(self.i18n.t("notes_btn_archive"), id="notes-archive")
 
         yield Footer()

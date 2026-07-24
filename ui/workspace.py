@@ -350,21 +350,290 @@ class ThemeManager:
         return self.BUILTIN_THEMES["dark"]
 
     def apply_theme(self, name: str) -> None:
-        """Apply theme by updating CSS variables."""
+        """Apply theme by generating full TCSS stylesheet."""
         self.current_theme = name
         theme = self.get_theme(name)
 
-        # Build CSS variables
-        css_vars = "\n".join(f"    {k}: {v};" for k, v in theme.items())
-
+        # Build full TCSS stylesheet with actual property values
         css = f"""
-        Screen {{
-            {css_vars}
-        }}
-        """
+Screen {{
+    background: {theme["background"]};
+    color: {theme["text"]};
+}}
+
+#main-container {{
+    background: {theme["background"]};
+}}
+
+#sidebar {{
+    background: {theme["surface"]};
+    border-right: solid {theme["border"]};
+}}
+
+#content-area {{
+    background: {theme["background"]};
+}}
+
+.screen {{
+    background: {theme["background"]};
+}}
+
+#app-title {{
+    color: {theme["primary"]};
+}}
+
+#app-subtitle {{
+    color: {theme["text_muted"]};
+}}
+
+.nav-button {{
+    background: transparent;
+    border: solid {theme["border"]};
+    color: {theme["text"]};
+}}
+
+.nav-button:hover {{
+    background: {theme["primary"]};
+    color: {theme["background"]};
+}}
+
+.nav-button.active {{
+    background: {theme["primary"]};
+    color: {theme["background"]};
+    border: solid {theme["reference_green"]};
+}}
+
+.screen-title {{
+    color: {theme["primary"]};
+}}
+
+.screen-description {{
+    color: {theme["text_muted"]};
+}}
+
+.section-title {{
+    color: {theme["accent"]};
+}}
+
+Label {{
+    color: {theme["text"]};
+}}
+
+Input {{
+    background: {theme["surface"]};
+    border: solid {theme["border"]};
+    color: {theme["text"]};
+}}
+
+Input:focus {{
+    border: solid {theme["primary"]};
+}}
+
+Select {{
+    background: {theme["surface"]};
+    border: solid {theme["border"]};
+    color: {theme["text"]};
+}}
+
+Select:focus {{
+    border: solid {theme["primary"]};
+}}
+
+.button-row Button {{
+    margin-right: 1;
+}}
+
+.progress-area {{
+    background: {theme["surface"]};
+    border: solid {theme["border"]};
+}}
+
+.progress-line {{
+    color: {theme["text"]};
+}}
+
+.progress-line.warning {{
+    color: {theme["warning_yellow"]};
+}}
+
+.progress-line.error {{
+    color: {theme["error_red"]};
+}}
+
+.results-area {{
+    margin-top: 2;
+}}
+
+#commander-panes {{
+    background: {theme["background"]};
+}}
+
+.commander-pane {{
+    border: solid {theme["border"]};
+}}
+
+.hint-bar {{
+    color: {theme["text_muted"]};
+    background: {theme["surface"]};
+    border: solid {theme["border"]};
+}}
+
+.panel {{
+    border: solid {theme["border"]};
+    background: {theme["surface"]};
+}}
+
+DataTable {{
+    background: {theme["surface"]};
+    color: {theme["text"]};
+}}
+
+DataTable > .datatable--header {{
+    background: {theme["primary"]};
+    color: {theme["background"]};
+    text-style: bold;
+}}
+
+DataTable > .datatable--cursor {{
+    background: {theme["accent"]};
+    color: {theme["background"]};
+}}
+
+DataTable > .datatable--even-row {{
+    background: {theme["surface"]};
+}}
+
+DataTable > .datatable--odd-row {{
+    background: {theme["background"]};
+}}
+
+RichLog {{
+    background: {theme["surface"]};
+    color: {theme["text"]};
+    border: solid {theme["border"]};
+}}
+
+.modal-container {{
+    background: {theme["surface"]};
+    border: thick {theme["primary"]};
+}}
+
+.modal-title {{
+    color: {theme["error_red"]};
+    text-style: bold;
+}}
+
+.modal-warning {{
+    color: {theme["warning_yellow"]};
+    text-style: bold;
+}}
+
+.modal-text {{
+    color: {theme["text"]};
+}}
+
+.modal-hotkey {{
+    color: {theme["accent"]};
+    text-style: bold;
+}}
+
+Footer {{
+    background: {theme["surface"]};
+    color: {theme["text"]};
+    border-top: solid {theme["border"]};
+}}
+
+Tree {{
+    background: {theme["surface"]};
+    color: {theme["text"]};
+}}
+
+Tree > .tree--cursor {{
+    background: {theme["primary"]};
+    color: {theme["background"]};
+}}
+
+Tree > .tree--guides {{
+    color: {theme["border"]};
+}}
+
+Collapsible {{
+    border: solid {theme["border"]};
+    background: {theme["surface"]};
+}}
+
+Collapsible > .collapsible--title {{
+    background: {theme["primary"]};
+    color: {theme["background"]};
+    text-style: bold;
+}}
+
+TabbedContent {{
+    background: {theme["surface"]};
+}}
+
+TabbedContent > .tabbed-content--tabs {{
+    background: {theme["background"]};
+    border-bottom: solid {theme["border"]};
+}}
+
+TabbedContent > .tabbed-content--tabs Button {{
+    color: {theme["text_muted"]};
+}}
+
+TabbedContent > .tabbed-content--tabs Button.-active {{
+    color: {theme["primary"]};
+    text-style: bold;
+    border-bottom: solid {theme["primary"]};
+}}
+
+.reference-file {{
+    color: {theme["reference_green"]};
+    text-style: bold;
+}}
+
+.warning-text {{
+    color: {theme["warning_yellow"]};
+}}
+
+.error-text {{
+    color: {theme["error_red"]};
+}}
+
+.ai-auto-text {{
+    color: {theme["accent"]};
+}}
+
+ProgressBar {{
+    background: {theme["surface"]};
+    color: {theme["accent"]};
+}}
+
+ProgressBar > .progress-bar--bar {{
+    background: {theme["primary"]};
+}}
+
+Sparkline {{
+    color: {theme["accent"]};
+}}
+
+Scrollbar {{
+    background: {theme["background"]};
+    color: {theme["primary"]};
+}}
+
+.selected {{
+    background: {theme["primary"]};
+    color: {theme["background"]};
+}}
+
+*:focus {{
+    border: solid {theme["primary"]};
+}}
+"""
 
         # Apply to app
-        self.app.stylesheet.parse(css)
+        self.app.stylesheet.add_source(css)
         self.app.refresh_css()
 
     def create_custom_theme(self, name: str, colors: dict) -> None:

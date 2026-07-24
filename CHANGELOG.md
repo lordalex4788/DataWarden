@@ -121,20 +121,12 @@ with a custom scheme: `0.05.10` → `0.05.20` → ... → `0.05.90` → `0.10.10
 
 ---
 
-## Version History Template
+## [0.05.60] - 2026-07-24 19:45:00
 
-### [X.Y.Z] - YYYY-MM-DD HH:MM:SS
+### UI
+* **Theme System** (`ui/workspace.py`): Fixed ThemeManager.apply_theme() to generate valid TCSS with actual CSS property values instead of invalid custom properties. All 4 built-in themes (dark, light, nord, dracula) now apply correctly with live reload.
+* **Main App** (`main.py`): Fixed unused imports, replaced deprecated `Input(multiline=True)` with `TextArea` widget for notes content field.
+* **Linting**: Fixed all ruff violations (unused imports, import sorting, loop variable naming, trailing newline).
 
-#### Category
-* **Description:** Details
-
-#### Categories
-- **Setup** - Project structure, configs, scripts, dependencies
-- **Core** - Indexer, Ref Engine, Selector, Snapshot, Execution
-- **UI** - Textual components, layouts, themes, widgets
-- **AI** - LLM integration, filters, copilot, policies
-- **Snapshot** - Transaction system, quarantine, rollback
-- **Warden** - Filesystem monitoring, governance, validation
-- **Tests** - Unit, integration, property-based, stress tests
-- **Docs** - README, architecture, configuration, AI guides
-- **Fix** - Bug fixes, regressions
+### Core
+* **ThemeManager**: Complete rewrite of apply_theme() to generate full TCSS stylesheet with proper property mapping for all UI components (Screen, Sidebar, Forms, DataTables, Trees, Modals, Footer, Progress bars, etc.).
