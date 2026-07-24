@@ -8,16 +8,12 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
 
 from textual.app import App
-from textual.containers import Container, Horizontal, Vertical
 from textual.widget import Widget
-from textual.widgets import Static, Button, Label
-from textual.reactive import reactive
 
 
 class SplitDirection(Enum):
@@ -29,29 +25,29 @@ class SplitDirection(Enum):
 class PaneConfig:
     """Configuration for a single pane."""
     widget_type: str            # e.g., "commander_tree", "duplicate_table", "log_panel"
-    widget_config: Dict = field(default_factory=dict)
+    widget_config: dict = field(default_factory=dict)
     title: str = ""
     size_ratio: float = 1.0     # Relative size in parent split
     minimized: bool = False
-    
 
-@dataclass 
+
+@dataclass
 class SplitNode:
     """Node in the binary split tree."""
     direction: SplitDirection
-    children: List[Union['SplitNode', 'LeafNode']] = field(default_factory=list)
-    sizes: List[float] = field(default_factory=list)  # Size ratios for children
-    
-    def to_dict(self) -> Dict:
+    children: list[SplitNode | LeafNode] = field(default_factory=list)
+    sizes: list[float] = field(default_factory=list)  # Size ratios for children
+
+    def to_dict(self) -> dict:
         return {
             "type": "split",
             "direction": self.direction.value,
             "children": [c.to_dict() for c in self.children],
             "sizes": self.sizes
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict) -> 'SplitNode':
+    def from_dict(cls, data: dict) -> SplitNode:
         children = []
         for c in data["children"]:
             if c["type"] == "split":
@@ -69,15 +65,15 @@ class SplitNode:
 class LeafNode:
     """Leaf node containing a pane."""
     pane: PaneConfig
-    
-    def to_dict(self) -> Dict:
+
+    def to_dict(self) -> dict:
         return {
             "type": "leaf",
             "pane": asdict(self.pane)
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict) -> 'LeafNode':
+    def from_dict(cls, data: dict) -> LeafNode:
         return cls(pane=PaneConfig(**data["pane"]))
 
 
@@ -86,13 +82,13 @@ class LayoutManager:
     Manages dynamic split layout tree.
     Supports: horizontal/vertical splits, resize, persist/restore.
     """
-    
+
     def __init__(self, app: App):
         self.app = app
-        self.root: Optional[Union[SplitNode, LeafNode]] = None
+        self.root: SplitNode | LeafNode | None = None
         self.layout_file = Path("config/layout.json")
-        self._pane_widgets: Dict[str, Widget] = {}
-    
+        self._pane_widgets: dict[str, Widget] = {}
+
     def create_default_layout(self) -> SplitNode:
         """Create the default 2-pane Commander layout."""
         left_pane = LeafNode(PaneConfig(
@@ -101,11 +97,11 @@ class LayoutManager:
             widget_config={"side": "left"}
         ))
         right_pane = LeafNode(PaneConfig(
-            widget_type="commander_tree", 
+            widget_type="commander_tree",
             title="Rechts",
             widget_config={"side": "right"}
         ))
-        
+
         root = SplitNode(
             direction=SplitDirection.HORIZONTAL,
             children=[left_pane, right_pane],
@@ -113,14 +109,14 @@ class LayoutManager:
         )
         self.root = root
         return root
-    
-    def split_pane(self, 
-                   target_leaf: LeafNode, 
+
+    def split_pane(self,
+                   target_leaf: LeafNode,
                    direction: SplitDirection,
                    new_pane: PaneConfig) -> SplitNode:
         """Split an existing leaf into two."""
         new_leaf = LeafNode(new_pane)
-        
+
         if direction == SplitDirection.HORIZONTAL:
             new_split = SplitNode(
                 direction=SplitDirection.HORIZONTAL,
@@ -133,18 +129,18 @@ class LayoutManager:
                 children=[target_leaf, new_leaf],
                 sizes=[0.5, 0.5]
             )
-        
+
         # Replace target_leaf with new_split in tree
         self._replace_leaf(self.root, target_leaf, new_split)
         return new_split
-    
-    def _replace_leaf(self, node: Union[SplitNode, LeafNode], 
-                      old_leaf: LeafNode, 
-                      new_node: Union[SplitNode, LeafNode]) -> bool:
+
+    def _replace_leaf(self, node: SplitNode | LeafNode,
+                      old_leaf: LeafNode,
+                      new_node: SplitNode | LeafNode) -> bool:
         """Recursively replace a leaf in the tree."""
         if isinstance(node, LeafNode):
             return False
-        
+
         for i, child in enumerate(node.children):
             if child is old_leaf:
                 node.children[i] = new_node
@@ -153,16 +149,16 @@ class LayoutManager:
                 if self._replace_leaf(child, old_leaf, new_node):
                     return True
         return False
-    
+
     def close_pane(self, target_leaf: LeafNode) -> bool:
         """Close a pane, merging with sibling if possible."""
         parent = self._find_parent(self.root, target_leaf)
         if not parent or len(parent.children) != 2:
             return False  # Can't close last pane
-        
+
         # Find sibling
         sibling = parent.children[0] if parent.children[1] is target_leaf else parent.children[1]
-        
+
         # Replace parent with sibling in grandparent
         grandparent = self._find_parent(self.root, parent)
         if grandparent:
@@ -170,15 +166,15 @@ class LayoutManager:
         else:
             # Parent was root
             self.root = sibling
-        
+
         return True
-    
-    def _find_parent(self, node: Union[SplitNode, LeafNode], 
-                     target: Union[SplitNode, LeafNode]) -> Optional[SplitNode]:
+
+    def _find_parent(self, node: SplitNode | LeafNode,
+                     target: SplitNode | LeafNode) -> SplitNode | None:
         """Find parent of target node."""
         if isinstance(node, LeafNode):
             return None
-        
+
         for child in node.children:
             if child is target:
                 return node
@@ -187,20 +183,20 @@ class LayoutManager:
                 if result:
                     return result
         return None
-    
+
     def resize_split(self, split: SplitNode, delta: float, child_index: int) -> None:
         """Adjust size ratios of a split's children."""
         if child_index >= len(split.sizes):
             return
-        
+
         # Adjust size
         new_size = split.sizes[child_index] + delta
         new_size = max(0.1, min(0.9, new_size))  # Clamp 10%-90%
-        
+
         # Redistribute remaining
         remaining = 1.0 - new_size
         other_indices = [i for i in range(len(split.sizes)) if i != child_index]
-        
+
         if other_indices:
             # Distribute proportionally to current sizes
             total_other = sum(split.sizes[i] for i in other_indices)
@@ -211,27 +207,27 @@ class LayoutManager:
                 # Equal distribution
                 for i in other_indices:
                     split.sizes[i] = remaining / len(other_indices)
-        
+
         split.sizes[child_index] = new_size
-    
-    def find_pane_at_position(self, x: int, y: int) -> Optional[LeafNode]:
+
+    def find_pane_at_position(self, x: int, y: int) -> LeafNode | None:
         """Find leaf node at screen coordinates (for drag-drop)."""
         # Would need widget geometry - simplified
         return None
-    
-    def get_all_leaves(self) -> List[LeafNode]:
+
+    def get_all_leaves(self) -> list[LeafNode]:
         """Get all leaf nodes in the layout."""
         leaves = []
         self._collect_leaves(self.root, leaves)
         return leaves
-    
-    def _collect_leaves(self, node: Union[SplitNode, LeafNode], leaves: List[LeafNode]) -> None:
+
+    def _collect_leaves(self, node: SplitNode | LeafNode, leaves: list[LeafNode]) -> None:
         if isinstance(node, LeafNode):
             leaves.append(node)
         else:
             for child in node.children:
                 self._collect_leaves(child, leaves)
-    
+
     def save_layout(self) -> None:
         """Persist layout to disk."""
         if self.root:
@@ -242,20 +238,20 @@ class LayoutManager:
                 "layout": self.root.to_dict()
             }
             self.layout_file.write_text(json.dumps(data, indent=2))
-    
+
     def load_layout(self) -> bool:
         """Load layout from disk."""
         if not self.layout_file.exists():
             return False
-        
+
         try:
             data = json.loads(self.layout_file.read_text())
             self.root = self._deserialize_node(data["layout"])
             return True
         except Exception:
             return False
-    
-    def _deserialize_node(self, data: Dict) -> Union[SplitNode, LeafNode]:
+
+    def _deserialize_node(self, data: dict) -> SplitNode | LeafNode:
         if data["type"] == "split":
             return SplitNode.from_dict(data)
         else:
@@ -264,7 +260,7 @@ class LayoutManager:
 
 class ThemeManager:
     """Manages TCSS themes with live reload."""
-    
+
     BUILTIN_THEMES = {
         "dark": {
             "background": "#1e1e2e",
@@ -327,54 +323,54 @@ class ThemeManager:
             "error_red": "#ff5555"
         }
     }
-    
+
     def __init__(self, app: App):
         self.app = app
         self.current_theme = "dark"
-        self.custom_themes: Dict[str, Dict] = {}
+        self.custom_themes: dict[str, dict] = {}
         self.custom_file = Path("config/theme.json")
         self.load_custom()
-    
+
     def load_custom(self) -> None:
         if self.custom_file.exists():
             try:
                 self.custom_themes = json.loads(self.custom_file.read_text())
             except Exception:
                 self.custom_themes = {}
-    
+
     def save_custom(self) -> None:
         self.custom_file.parent.mkdir(parents=True, exist_ok=True)
         self.custom_file.write_text(json.dumps(self.custom_themes, indent=2))
-    
-    def get_theme(self, name: str) -> Dict:
+
+    def get_theme(self, name: str) -> dict:
         if name in self.BUILTIN_THEMES:
             return self.BUILTIN_THEMES[name]
         if name in self.custom_themes:
             return self.custom_themes[name]
         return self.BUILTIN_THEMES["dark"]
-    
+
     def apply_theme(self, name: str) -> None:
         """Apply theme by updating CSS variables."""
         self.current_theme = name
         theme = self.get_theme(name)
-        
+
         # Build CSS variables
         css_vars = "\n".join(f"    {k}: {v};" for k, v in theme.items())
-        
+
         css = f"""
         Screen {{
             {css_vars}
         }}
         """
-        
+
         # Apply to app
         self.app.stylesheet.parse(css)
         self.app.refresh_css()
-    
-    def create_custom_theme(self, name: str, colors: Dict) -> None:
+
+    def create_custom_theme(self, name: str, colors: dict) -> None:
         """Create a custom theme."""
         self.custom_themes[name] = colors
         self.save_custom()
-    
-    def get_available_themes(self) -> List[str]:
+
+    def get_available_themes(self) -> list[str]:
         return list(self.BUILTIN_THEMES.keys()) + list(self.custom_themes.keys())

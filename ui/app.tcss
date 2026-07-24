@@ -1,32 +1,12 @@
 /* DataWarden - Main TCSS Stylesheet */
 /* =============================================================================
-   CSS Variables (Theming)
+   Base Styles - Theming handled by ThemeManager via dynamic CSS
    ============================================================================= */
 
 Screen {
-    /* Base colors - overridden by ThemeManager */
+    /* Base colors - overridden by ThemeManager.apply_theme() */
     background: #1e1e2e;
-    surface: #282a36;
-    primary: #bd93f9;
-    secondary: #6272a4;
-    accent: #50fa7b;
-    warning: #ffb86c;
-    error: #ff5555;
-    text: #f8f8f2;
-    text-muted: #6272a4;
-    border: #44475a;
-    
-    /* Semantic colors */
-    reference-green: #50fa7b;
-    warning-yellow: #ffb86c;
-    error-red: #ff5555;
-    ai-cyan: #8be9fd;
-    
-    /* Spacing */
-    spacing-xs: 1;
-    spacing-sm: 2;
-    spacing-md: 3;
-    spacing-lg: 4;
+    color: #f8f8f2;
 }
 
 /* =============================================================================
@@ -41,8 +21,8 @@ Screen {
 #sidebar {
     width: 25;
     height: 1fr;
-    background: $surface;
-    border-right: solid $border;
+    background: #282a36;
+    border-right: solid #44475a;
     padding: 1;
     overflow-y: auto;
 }
@@ -50,7 +30,7 @@ Screen {
 #content-area {
     width: 1fr;
     height: 1fr;
-    background: $background;
+    background: #1e1e2e;
 }
 
 .screen {
@@ -69,13 +49,13 @@ Screen {
 
 #app-title {
     text-style: bold;
-    color: $primary;
+    color: #bd93f9;
     text-align: center;
     margin-bottom: 0;
 }
 
 #app-subtitle {
-    color: $text-muted;
+    color: #6272a4;
     text-align: center;
     margin-bottom: 2;
 }
@@ -84,19 +64,19 @@ Screen {
     width: 100%;
     margin: 1 0;
     background: transparent;
-    border: solid $border;
-    color: $text;
+    border: solid #44475a;
+    color: #f8f8f2;
 }
 
 .nav-button:hover {
-    background: $primary;
-    color: $background;
+    background: #bd93f9;
+    color: #1e1e2e;
 }
 
 .nav-button.active {
-    background: $primary;
-    color: $background;
-    border: solid $accent;
+    background: #bd93f9;
+    color: #1e1e2e;
+    border: solid #50fa7b;
 }
 
 /* =============================================================================
@@ -105,18 +85,18 @@ Screen {
 
 .screen-title {
     text-style: bold;
-    color: $primary;
+    color: #bd93f9;
     margin-bottom: 1;
 }
 
 .screen-description {
-    color: $text-muted;
+    color: #6272a4;
     margin-bottom: 2;
 }
 
 .section-title {
     text-style: bold;
-    color: $accent;
+    color: #50fa7b;
     margin: 2 0 1 0;
 }
 
@@ -133,29 +113,29 @@ Screen {
     width: 1fr;
 }
 
-.form-group label {
-    color: $text;
+Label {
+    color: #f8f8f2;
     margin-bottom: 1;
 }
 
 Input {
-    background: $surface;
-    border: solid $border;
-    color: $text;
+    background: #282a36;
+    border: solid #44475a;
+    color: #f8f8f2;
 }
 
 Input:focus {
-    border: solid $primary;
+    border: solid #bd93f9;
 }
 
 Select {
-    background: $surface;
-    border: solid $border;
-    color: $text;
+    background: #282a36;
+    border: solid #44475a;
+    color: #f8f8f2;
 }
 
 Select:focus {
-    border: solid $primary;
+    border: solid #bd93f9;
 }
 
 .button-row {
@@ -174,8 +154,8 @@ Select:focus {
 .progress-area {
     margin-top: 2;
     padding: 1;
-    background: $surface;
-    border: solid $border;
+    background: #282a36;
+    border: solid #44475a;
 }
 
 .progress-area.hidden {
@@ -183,16 +163,16 @@ Select:focus {
 }
 
 .progress-line {
-    color: $text;
+    color: #f8f8f2;
     margin: 0;
 }
 
 .progress-line.warning {
-    color: $warning;
+    color: #ffb86c;
 }
 
 .progress-line.error {
-    color: $error;
+    color: #ff5555;
 }
 
 /* =============================================================================
@@ -219,22 +199,22 @@ Select:focus {
 .commander-pane {
     width: 1fr;
     height: 1fr;
-    border: solid $border;
+    border: solid #44475a;
 }
 
 .hint-bar {
-    color: $text-muted;
+    color: #6272a4;
     text-align: center;
     margin-bottom: 1;
     padding: 1;
-    background: $surface;
-    border: solid $border;
+    background: #282a36;
+    border: solid #44475a;
 }
 
 .panel {
     height: 20;
-    border: solid $border;
-    background: $surface;
+    border: solid #44475a;
+    background: #282a36;
 }
 
 .panel.hidden {
@@ -246,27 +226,27 @@ Select:focus {
    ============================================================================= */
 
 DataTable {
-    background: $surface;
-    color: $text;
+    background: #282a36;
+    color: #f8f8f2;
 }
 
 DataTable > .datatable--header {
-    background: $primary;
-    color: $background;
+    background: #bd93f9;
+    color: #1e1e2e;
     text-style: bold;
 }
 
 DataTable > .datatable--cursor {
-    background: $accent;
-    color: $background;
+    background: #50fa7b;
+    color: #1e1e2e;
 }
 
 DataTable > .datatable--even-row {
-    background: $surface;
+    background: #282a36;
 }
 
 DataTable > .datatable--odd-row {
-    background: $background;
+    background: #1e1e2e;
 }
 
 /* =============================================================================
@@ -274,9 +254,9 @@ DataTable > .datatable--odd-row {
    ============================================================================= */
 
 RichLog {
-    background: $surface;
-    color: $text;
-    border: solid $border;
+    background: #282a36;
+    color: #f8f8f2;
+    border: solid #44475a;
 }
 
 /* =============================================================================
@@ -292,32 +272,32 @@ RichLog {
     max-width: 100;
     height: auto;
     max-height: 80%;
-    background: $surface;
-    border: thick $primary;
+    background: #282a36;
+    border: thick #bd93f9;
     padding: 2;
     overflow-y: auto;
 }
 
 .modal-title {
     text-style: bold;
-    color: $error;
+    color: #ff5555;
     text-align: center;
     margin-bottom: 1;
 }
 
 .modal-warning {
-    color: $warning;
+    color: #ffb86c;
     text-style: bold;
     margin: 1 0;
 }
 
 .modal-text {
-    color: $text;
+    color: #f8f8f2;
     margin: 1 0;
 }
 
 .modal-hotkey {
-    color: $accent;
+    color: #50fa7b;
     text-style: bold;
     margin: 1 0;
 }
@@ -336,145 +316,141 @@ RichLog {
    ============================================================================= */
 
 Footer {
-    background: $surface;
-    color: $text;
-    border-top: solid $border;
+    background: #282a36;
+    color: #f8f8f2;
+    border-top: solid #44475a;
 }
 
 /* =============================================================================
    Tree Widget
-   ============================================================================= |
+   ============================================================================= */
 
 Tree {
-    background: $surface;
-    color: $text;
+    background: #282a36;
+    color: #f8f8f2;
 }
 
 Tree > .tree--cursor {
-    background: $primary;
-    color: $background;
+    background: #bd93f9;
+    color: #1e1e2e;
 }
 
 Tree > .tree--guides {
-    color: $border;
+    color: #44475a;
 }
 
 /* =============================================================================
    Collapsible
-   ============================================================================= |
+   ============================================================================= */
 
 Collapsible {
-    border: solid $border;
-    background: $surface;
+    border: solid #44475a;
+    background: #282a36;
 }
 
 Collapsible > .collapsible--title {
-    background: $primary;
-    color: $background;
+    background: #bd93f9;
+    color: #1e1e2e;
     text-style: bold;
 }
 
 /* =============================================================================
    TabbedContent
-   ============================================================================= |
+   ============================================================================= */
 
 TabbedContent {
-    background: $surface;
+    background: #282a36;
 }
 
 TabbedContent > .tabbed-content--tabs {
-    background: $background;
-    border-bottom: solid $border;
+    background: #1e1e2e;
+    border-bottom: solid #44475a;
 }
 
 TabbedContent > .tabbed-content--tabs Button {
-    color: $text-muted;
+    color: #6272a4;
 }
 
 TabbedContent > .tabbed-content--tabs Button.-active {
-    color: $primary;
+    color: #bd93f9;
     text-style: bold;
-    border-bottom: solid $primary;
+    border-bottom: solid #bd93f9;
 }
 
 /* =============================================================================
    Special Colors for Status
-   ============================================================================= |
+   ============================================================================= */
 
 .reference-file {
-    color: $reference-green;
+    color: #50fa7b;
     text-style: bold;
 }
 
 .warning-text {
-    color: $warning-yellow;
+    color: #ffb86c;
 }
 
 .error-text {
-    color: $error-red;
+    color: #ff5555;
 }
 
 .ai-auto-text {
-    color: $ai-cyan;
+    color: #8be9fd;
 }
 
 /* =============================================================================
    Progress Bar
-   ============================================================================= |
+   ============================================================================= */
 
 ProgressBar {
-    background: $surface;
-    color: $accent;
+    background: #282a36;
+    color: #50fa7b;
 }
 
 ProgressBar > .progress-bar--bar {
-    background: $primary;
+    background: #bd93f9;
 }
 
 /* =============================================================================
    Sparkline
-   ============================================================================= |
+   ============================================================================= */
 
 Sparkline {
-    color: $accent;
+    color: #50fa7b;
 }
 
 /* =============================================================================
    Scrollbar
-   ============================================================================= |
+   ============================================================================= */
 
 Scrollbar {
-    background: $background;
-    color: $primary;
+    background: #1e1e2e;
+    color: #bd93f9;
 }
 
 /* =============================================================================
    Selection
-   ============================================================================= |
+   ============================================================================= */
 
 .selected {
-    background: $primary;
-    color: $background;
+    background: #bd93f9;
+    color: #1e1e2e;
 }
 
 /* =============================================================================
    Focus Styles
-   ============================================================================= |
+   ============================================================================= */
 
 *:focus {
-    border: solid $primary;
+    border: solid #bd93f9;
 }
 
 /* =============================================================================
-   Animation
-   ============================================================================= |
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
+   Pulsing (handled via Textual animation API, not CSS keyframes)
+   ============================================================================= */
 
 .pulsing {
-    animation: pulse 1s infinite;
+    opacity: 0.5;
 }
+
+/* EOF */

@@ -6,14 +6,12 @@ Local LLM integration via Ollama for selection assist, NL->Filter, Copilot.
 
 from __future__ import annotations
 
-import asyncio
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
-import aiohttp
+from typing import Any
 
-from core.models import DuplicateGroup, DuplicateFile
+import aiohttp
 
 
 class AIMode(Enum):
@@ -31,12 +29,12 @@ class AIConfig:
     timeout_seconds: float = 30.0
     max_tokens: int = 2048
     temperature: float = 0.1
-    
+
     # Feature flags
     selection_assist: bool = True
     nl_filter_builder: bool = True
     copilot: bool = True
-    
+
     # Trust level (0-3)
     trust_level: int = 0
 
@@ -46,8 +44,8 @@ class SelectionContext:
     """Context for LLM selection decision."""
     group_hash: str
     file_size: int
-    files: List[Dict]  # Each: path, name, mtime, is_ref, depth, hygiene_score
-    
+    files: list[dict]  # Each: path, name, mtime, is_ref, depth, hygiene_score
+
     def to_prompt(self) -> str:
         file_desc = []
         for i, f in enumerate(self.files):
@@ -59,12 +57,12 @@ class SelectionContext:
                 f"     Depth: {f.get('depth', 0)}\n"
                 f"     Hygiene Score: {f.get('hygiene_score', 0):.2f}"
             )
-        
+
         return f"""Duplikate gefunden (Hash: {self.group_hash[:16]}..., Größe: {self.file_size} Bytes):
 
 {chr(10).join(file_desc)}
 
-Entscheide: Welche Datei soll BEHALTEN werden? 
+Entscheide: Welche Datei soll BEHALTEN werden?
 Antworte NUR mit der Nummer (1, 2, 3...) der zu behaltenden Datei.
 Begründung optional in Klammern."""
 
@@ -73,9 +71,9 @@ Begründung optional in Klammern."""
 class FilterBuildRequest:
     """Request to build filter from natural language."""
     user_text: str
-    available_filters: List[str]
-    context: Dict[str, Any] = field(default_factory=dict)
-    
+    available_filters: list[str]
+    context: dict[str, Any] = field(default_factory=dict)
+
     def to_prompt(self) -> str:
         filters_desc = "\n".join(f"- {f}" for f in self.available_filters)
         return f"""Der Nutzer möchte: "{self.user_text}"
@@ -100,37 +98,37 @@ class CopilotContext:
     """Full context for Copilot panel."""
     current_mode: str
     trust_level: int
-    active_filters: List[str]
-    recent_errors: List[Dict]
+    active_filters: list[str]
+    recent_errors: list[dict]
     quarantine_usage_gb: float
     quarantine_limit_gb: float
     last_operation: str = ""
-    selected_files: List[str] = field(default_factory=list)
+    selected_files: list[str] = field(default_factory=list)
 
 
 class OllamaClient:
     """Async client for Ollama API."""
-    
+
     def __init__(self, config: AIConfig):
         self.config = config
-        self.session: Optional[aiohttp.ClientSession] = None
-    
+        self.session: aiohttp.ClientSession | None = None
+
     async def __aenter__(self):
         self.session = aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=self.config.timeout_seconds)
         )
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self.session:
             await self.session.close()
-    
+
     async def generate(self, prompt: str, system: str = "", stream: bool = False) -> str:
         """Generate completion from Ollama."""
         if not self.session:
             async with self:
                 return await self.generate(prompt, system, stream)
-        
+
         payload = {
             "model": self.config.model,
             "prompt": prompt,
@@ -141,14 +139,14 @@ class OllamaClient:
                 "num_predict": self.config.max_tokens,
             }
         }
-        
+
         async with self.session.post(
             f"{self.config.ollama_url}/api/generate",
             json=payload
         ) as resp:
             if resp.status != 200:
                 raise AIError(f"Ollama error: {resp.status}")
-            
+
             if stream:
                 result = ""
                 async for line in resp.content:
@@ -159,13 +157,13 @@ class OllamaClient:
             else:
                 data = await resp.json()
                 return data.get("response", "")
-    
-    async def chat(self, messages: List[Dict[str, str]], stream: bool = False) -> str:
+
+    async def chat(self, messages: list[dict[str, str]], stream: bool = False) -> str:
         """Chat completion."""
         if not self.session:
             async with self:
                 return await self.chat(messages, stream)
-        
+
         payload = {
             "model": self.config.model,
             "messages": messages,
@@ -175,14 +173,14 @@ class OllamaClient:
                 "num_predict": self.config.max_tokens,
             }
         }
-        
+
         async with self.session.post(
             f"{self.config.ollama_url}/api/chat",
             json=payload
         ) as resp:
             if resp.status != 200:
                 raise AIError(f"Ollama chat error: {resp.status}")
-            
+
             if stream:
                 result = ""
                 async for line in resp.content:
@@ -200,12 +198,12 @@ class AIFilterEngine:
     Main AI integration engine.
     Provides three modes: Selection Assist, NL Filter Builder, Copilot.
     """
-    
+
     def __init__(self, config: AIConfig):
         self.config = config
-        self.client: Optional[OllamaClient] = None
+        self.client: OllamaClient | None = None
         self._initialized = False
-    
+
     async def initialize(self) -> bool:
         """Initialize connection to Ollama."""
         try:
@@ -217,22 +215,22 @@ class AIFilterEngine:
         except Exception:
             self._initialized = False
             return False
-    
-    async def selection_assist(self, context: SelectionContext) -> Optional[int]:
+
+    async def selection_assist(self, context: SelectionContext) -> int | None:
         """
         Let LLM decide which file to keep when filters are tied.
         Returns index (0-based) of file to keep, or None on failure.
         """
         if not self.config.selection_assist or not self._initialized:
             return None
-        
+
         try:
-            system = """Du bist ein Experte für Datei-Deduplizierung. 
+            system = """Du bist ein Experte für Datei-Deduplizierung.
 Wähle die beste Datei basierend auf: Originalität (Pfad-Tiefe), Namensqualität, Zeitstempel.
 Referenz-Dateien (markiert mit [REF]) haben absolute Priorität."""
-            
+
             response = await self.client.generate(context.to_prompt(), system=system)
-            
+
             # Parse response - expect number
             for line in response.strip().split('\n'):
                 line = line.strip()
@@ -242,24 +240,24 @@ Referenz-Dateien (markiert mit [REF]) haben absolute Priorität."""
                         return idx
         except Exception:
             pass
-        
+
         return None
-    
-    async def build_filter_pipeline(self, request: FilterBuildRequest) -> Optional[Dict]:
+
+    async def build_filter_pipeline(self, request: FilterBuildRequest) -> dict | None:
         """
         Convert natural language to filter pipeline JSON.
         Returns pipeline dict or None on failure.
         """
         if not self.config.nl_filter_builder or not self._initialized:
             return None
-        
+
         try:
             system = """Du übersetzt natürliche Sprache in Filter-Pipelines für Duplikat-Selektion.
 Verfügbare Filter: path_priority, filename_hygiene, artifact, path_depth, timestamp, owner.
 Antworte NUR mit valider JSON."""
-            
+
             response = await self.client.generate(request.to_prompt(), system=system)
-            
+
             # Parse JSON from response
             start = response.find('{')
             end = response.rfind('}') + 1
@@ -268,28 +266,28 @@ Antworte NUR mit valider JSON."""
                 return json.loads(json_str)
         except Exception:
             pass
-        
+
         return None
-    
+
     async def copilot_query(self, context: CopilotContext, question: str) -> str:
         """
         Copilot panel: Answer user questions with full context.
         """
         if not self.config.copilot or not self._initialized:
             return "KI nicht verfügbar. Prüfen Sie Ollama-Verbindung und Einstellungen."
-        
+
         try:
             system = self._build_copilot_system_prompt(context)
-            
+
             messages = [
                 {"role": "system", "content": system},
                 {"role": "user", "content": question}
             ]
-            
+
             return await self.client.chat(messages)
         except Exception as e:
             return f"KI-Fehler: {e}"
-    
+
     def _build_copilot_system_prompt(self, ctx: CopilotContext) -> str:
         return f"""Du bist der DataWarden Copilot - Experte für Duplikat-Management und Data Governance.
 

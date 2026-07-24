@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
-from typing import Optional, List, Dict, Any
-import time
+from typing import Any
 
 
 class SymlinkMode(Enum):
@@ -62,7 +61,7 @@ class FileMetadata:
     gid: int                  # Group GID
     inode: int                # Inode number
     is_symlink: bool = False
-    symlink_target: Optional[str] = None
+    symlink_target: str | None = None
     is_hardlink: bool = False
     path_len: int = 0
     file_type: str = ""       # Extension or "no_extension"
@@ -75,15 +74,15 @@ class ScanConfig:
     root_path: str
     min_size: int = 0
     max_size: int = -1        # -1 = unlimited
-    whitelist_ext: List[str] = field(default_factory=list)
-    blacklist_ext: List[str] = field(default_factory=list)
+    whitelist_ext: list[str] = field(default_factory=list)
+    blacklist_ext: list[str] = field(default_factory=list)
     symlink_mode: SymlinkMode = SymlinkMode.IGNORE
     track_hardlinks: bool = True
     treat_hardlinks_as_dupes: bool = False
     max_depth: int = 0        # 0 = unlimited
     follow_mounts: bool = False
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "root_path": self.root_path,
             "min_size": self.min_size,
@@ -96,9 +95,9 @@ class ScanConfig:
             "max_depth": self.max_depth,
             "follow_mounts": self.follow_mounts,
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> ScanConfig:
+    def from_dict(cls, data: dict[str, Any]) -> ScanConfig:
         return cls(
             root_path=data["root_path"],
             min_size=data.get("min_size", 0),
@@ -123,9 +122,9 @@ class FolderState:
     files_total: int = 0
     current_file: str = ""
     started_at: float = field(default_factory=time.time)
-    completed_at: Optional[float] = None
-    error: Optional[str] = None
-    error_action: Optional[ErrorAction] = None
+    completed_at: float | None = None
+    error: str | None = None
+    error_action: ErrorAction | None = None
     config_hash: str = ""
 
 
@@ -136,16 +135,16 @@ class Savestate:
     root_path: str
     config_hash: str
     started_at: float
-    folders: Dict[str, FolderState] = field(default_factory=dict)
-    errors: List[Dict[str, Any]] = field(default_factory=list)
+    folders: dict[str, FolderState] = field(default_factory=dict)
+    errors: list[dict[str, Any]] = field(default_factory=list)
     total_files: int = 0
     completed_files: int = 0
-    
+
     def is_folder_completed(self, path: str) -> bool:
         state = self.folders.get(path)
         return state is not None and state.status == ScanStatus.COMPLETED
-    
-    def get_pending_folders(self) -> List[str]:
+
+    def get_pending_folders(self) -> list[str]:
         return [
             path for path, state in self.folders.items()
             if state.status in (ScanStatus.PENDING, ScanStatus.SCANNING, ScanStatus.HASHING)
@@ -165,16 +164,16 @@ class DuplicateGroup:
     """A group of duplicate files (same hash)."""
     hash: str
     size: int
-    files: List[DuplicateFile] = field(default_factory=list)
-    
+    files: list[DuplicateFile] = field(default_factory=list)
+
     @property
-    def reference_files(self) -> List[DuplicateFile]:
+    def reference_files(self) -> list[DuplicateFile]:
         return [f for f in self.files if f.is_reference]
-    
+
     @property
-    def non_reference_files(self) -> List[DuplicateFile]:
+    def non_reference_files(self) -> list[DuplicateFile]:
         return [f for f in self.files if not f.is_reference]
-    
+
     @property
     def wasted_bytes(self) -> int:
         """Bytes wasted by duplicates (size * (count - 1))."""
@@ -184,7 +183,7 @@ class DuplicateGroup:
 @dataclass
 class ComparisonResult:
     """Result of cross-reference comparison."""
-    groups: List[DuplicateGroup] = field(default_factory=list)
+    groups: list[DuplicateGroup] = field(default_factory=list)
     total_groups: int = 0
     total_wasted_bytes: int = 0
     reference_protected_count: int = 0
@@ -206,7 +205,7 @@ class Snapshot:
     id: str
     timestamp: float
     mode: ExecutionMode
-    mappings: Dict[str, str]  # quarantine_path -> original_path
+    mappings: dict[str, str]  # quarantine_path -> original_path
     total_size: int
     filter_config_hash: str
     description: str = ""
@@ -219,7 +218,7 @@ class WardenZone:
     name: str
     expected_permissions: str = "640"  # e.g., "640"
     naming_regex: str = ""
-    classification_rules: Dict[str, Any] = field(default_factory=dict)
+    classification_rules: dict[str, Any] = field(default_factory=dict)
     auto_fix_permissions: bool = True
     auto_fix_naming: bool = False
     llm_triage: bool = True
@@ -228,15 +227,17 @@ class WardenZone:
 @dataclass
 class WardenIncident:
     """Incident detected by FileSystem Warden."""
+    id: str
     timestamp: float
     zone: str
     file_path: str
     incident_type: str  # permission, naming, classification
     severity: str       # info, warning, critical
     description: str
-    llm_suggestion: Optional[str] = None
+    details: dict = field(default_factory=dict)
+    llm_suggestion: str | None = None
     status: str = "open"  # open, auto_fixed, pending_review, resolved
-    resolved_at: Optional[float] = None
+    resolved_at: float | None = None
     resolved_by: str = ""
 
 
