@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -126,7 +126,19 @@ class DynamicPolicyManager:
                 }
                 for bt, gk in self.bundle_gatekeepers.items()
             },
-            "learned_rules": [asdict(r) for r in self.learned_rules]
+            "learned_rules": [
+                {
+                    "id": r.id,
+                    "bundle": r.bundle.value,
+                    "filter_type": r.filter_type,
+                    "pattern": r.pattern,
+                    "description": r.description,
+                    "created_at": r.created_at,
+                    "created_by_user_action": r.created_by_user_action,
+                    "enabled": r.enabled
+                }
+                for r in self.learned_rules
+            ]
         }
 
         config_file.write_text(json.dumps(data, indent=2))

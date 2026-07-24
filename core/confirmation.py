@@ -93,6 +93,13 @@ class ConfirmationEngine:
         """
         cfg = custom_config or self.config
 
+        # Audit mode (levels=0): auto-confirm without prompting
+        if cfg.levels == 0:
+            return ConfirmationResult(
+                confirmed=True,
+                level_reached=0
+            )
+
         if not cfg.validate():
             return ConfirmationResult(
                 confirmed=False,

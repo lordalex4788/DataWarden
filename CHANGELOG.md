@@ -39,6 +39,37 @@ with a custom scheme: `0.05.10` → `0.05.20` → ... → `0.05.90` → `0.10.10
 
 ---
 
+## [0.05.50] - 2026-07-24 18:30:00
+
+### Core
+* **Confirmation Engine** (`core/confirmation.py`): Multi-level confirmation system for destructive operations
+  * `ConfirmationEngine`: Configurable N-level confirmation chains with custom hotkeys
+  * `ConfirmationManager`: Mode-specific configs (audit=0, safe_move=2, hard_delete=3 levels)
+  * `ConfirmationProfiles`: Pre-built profiles (minimal, standard, strict, paranoid, custom)
+  * Async callbacks for Textual UI integration (input/display)
+* **Dynamic Policy Manager** (`core/policy.py`): Zero-Trust Matrix with learning
+  * `TrustLevel` enum: STRICT_ZERO_TRUST (0) → LAYOUT_ONLY (1) → ASSISTED_LOGIC (2) → COLLABORATIVE_EXECUTE (3)
+  * `BundleGatekeeper`: Per-bundle AI permissions (UI_LAYOUT, FILTERS_PIPELINES, FILE_METADATA_SORTING, GOVERNANCE_WARDEN)
+  * `LearnedRule`: Dynamic whitelist from user confirmations ("Remember this decision")
+  * `DynamicPolicyManager`: Persists to `config/policies.json`, matrix check `can_ai_act()`
+* **AI Filter Engine** (`core/ai_filter.py`): Local LLM via Ollama
+  * `OllamaClient`: Async HTTP client for `/api/generate` and `/api/chat`
+  * `AIFilterEngine`: Three modes - Selection Assist (tie-breaking), NL→Filter Builder, Copilot Panel
+  * `AIConfig`: Model, timeout, temperature, feature flags per mode
+  * System prompts enforce Zero-Trust: AI proposes, never executes autonomously
+
+### Tests
+* **Confirmation** (`tests/core/test_confirmation.py`): 25 tests covering config validation, engine callbacks, manager modes, profiles, fallback
+* **Policy** (`tests/core/test_policy.py`): 22 tests covering trust levels, gatekeepers, learned rules, persistence, matrix checks
+* **AI Filter** (`tests/core/test_ai_filter.py`): 18 tests covering config, client, selection assist, NL builder, copilot, error handling
+
+### Fixes
+* **Confirmation Engine**: Fixed audit mode (levels=0) auto-confirm without prompting
+* **Policy Manager**: Fixed serialization of `LearnedRule` dataclass without `asdict`
+* **AI Filter Tests**: Fixed OllamaClient async context manager mocking for pytest-asyncio
+
+---
+
 ## [0.05.40] - 2026-07-24 17:45:00
 
 ### Core
