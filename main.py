@@ -16,7 +16,6 @@ sys.path.insert(0, str(Path(__file__).parent))
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
-from textual.reactive import reactive
 from textual.widgets import (
     Button,
     Checkbox,
@@ -25,20 +24,18 @@ from textual.widgets import (
     Header,
     Input,
     Label,
-    Log,
     Select,
     Static,
-    Tree,
 )
 
 from core.i18n import I18nManager
 from ui.components import (
-    CommanderTree,
     DuplicateTable,
-    HexDebugPanel,
+    LogPanel,
+    SettingsPane,
     WardenDashboard,
 )
-from ui.workspace import LayoutManager
+from ui.workspace import LayoutManager, ThemeManager
 
 
 class DataWardenApp(App):
@@ -69,14 +66,15 @@ class DataWardenApp(App):
     ]
 
     # Reactive attributes for live updates
-    current_mode: reactive[str] = reactive("AUDIT")
-    trust_level: reactive[int] = reactive(0)
-    quarantine_usage: reactive[str] = reactive("0/0 GB")
+    current_mode: str = "AUDIT"
+    trust_level: int = 0
+    quarantine_usage: str = "0/0 GB"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.i18n = I18nManager()
         self.workspace = LayoutManager(self)
+        self.theme_manager = ThemeManager(self)
         self.current_screen = "indexing"
 
     def compose(self) -> ComposeResult:
@@ -106,8 +104,9 @@ class DataWardenApp(App):
                     btn.screen_id = screen_id
                     yield btn
 
-            # Main content area - simple indexing screen
+            # Main content area - all screens
             with Container(id="content-area"):
+                # Indexing Screen
                 with Container(id="indexing-screen", classes="screen"):
                     yield Static(self.i18n.t("indexing_title"), classes="screen-title")
                     yield Static(self.i18n.t("indexing_description"), classes="screen-description")
@@ -181,398 +180,149 @@ class DataWardenApp(App):
                         yield Static("", id="idx-progress-warnings", classes="progress-line warning")
                         yield Static("", id="idx-progress-errors", classes="progress-line error")
 
+                # Compare Screen
+                with Container(id="compare-screen", classes="screen hidden"):
+                    yield Static(self.i18n.t("compare_title"), classes="screen-title")
+                    yield Static(self.i18n.t("compare_description"), classes="screen-description")
+
+                    with Horizontal(classes="form-row"):
+                        with Vertical(classes="form-group half"):
+                            yield Label(self.i18n.t("compare_label_ref_folder"))
+                            yield Input(placeholder=self.i18n.t("compare_placeholder_ref_folder"), id="cmp-ref-folder")
+
+                        with Vertical(classes="form-group half"):
+                            yield Label(self.i18n.t("compare_label_target_folder"))
+                            yield Input(placeholder=self.i18n.t("compare_placeholder_target_folder"), id="cmp-target-folder")
+
+                    with Horizontal(classes="form-row"):
+                        with Vertical(classes="form-group half"):
+                            yield Checkbox(label=self.i18n.t("compare_check_intra"), id="cmp-intra")
+                        with Vertical(classes="form-group half"):
+                            yield Checkbox(label=self.i18n.t("compare_check_inter"), id="cmp-inter")
+
+                    with Horizontal(classes="button-row"):
+                        yield Button(self.i18n.t("compare_btn_start"), id="cmp-start", variant="primary")
+                        yield Button(self.i18n.t("compare_btn_load_index"), id="cmp-load")
+
+                    with Container(id="compare-results", classes="results-area hidden"):
+                        yield Static(self.i18n.t("compare_results_title"), classes="section-title")
+                        yield DuplicateTable(id="cmp-duplicate-table")
+
+                # Select Screen
+                with Container(id="select-screen", classes="screen hidden"):
+                    yield Static(self.i18n.t("select_title"), classes="screen-title")
+                    yield Static(self.i18n.t("select_description"), classes="screen-description")
+
+                    with Horizontal(classes="form-row"):
+                        with Vertical(classes="form-group half"):
+                            yield Label(self.i18n.t("select_label_available_filters"))
+                            yield DataTable(id="sel-available-filters")
+                            yield Button(self.i18n.t("select_btn_add_filter"), id="sel-add-filter")
+
+                        with Vertical(classes="form-group half"):
+                            yield Label(self.i18n.t("select_label_active_pipeline"))
+                            yield DataTable(id="sel-active-pipeline")
+                            with Horizontal(classes="button-row"):
+                                yield Button(self.i18n.t("select_btn_remove"), id="sel-remove-filter")
+                                yield Button(self.i18n.t("select_btn_up"), id="sel-move-up")
+                                yield Button(self.i18n.t("select_btn_down"), id="sel-move-down")
+
+                    yield Container(id="sel-filter-params", classes="form-group")
+
+                    with Horizontal(classes="button-row"):
+                        yield Button(self.i18n.t("select_btn_save_preset"), id="sel-save-preset")
+                        yield Button(self.i18n.t("select_btn_load_preset"), id="sel-load-preset")
+                        yield Button(self.i18n.t("select_btn_run"), id="sel-run", variant="primary")
+
+                    with Container(id="select-preview", classes="results-area hidden"):
+                        yield Static(self.i18n.t("select_preview_title"), classes="section-title")
+                        yield DuplicateTable(id="sel-preview-table")
+
+                # Execute Screen
+                with Container(id="execute-screen", classes="screen hidden"):
+                    yield Static(self.i18n.t("execute_title"), classes="screen-title")
+                    yield Static(self.i18n.t("execute_description"), classes="screen-description")
+
+                    with Horizontal(classes="form-row"):
+                        with Vertical(classes="form-group half"):
+                            yield Label(self.i18n.t("execute_label_mode"))
+                            yield Select(
+                                options=[
+                                    (self.i18n.t("execute_mode_audit"), "audit"),
+                                    (self.i18n.t("execute_mode_safe_move"), "safe_move"),
+                                    (self.i18n.t("execute_mode_hard_delete"), "hard_delete"),
+                                ],
+                                id="exec-mode",
+                                value="audit"
+                            )
+
+                    with Horizontal(classes="form-row"):
+                        with Vertical(classes="form-group half"):
+                            yield Label(self.i18n.t("execute_label_quarantine"))
+                            yield Input(placeholder=self.i18n.t("execute_placeholder_quarantine"), id="exec-quarantine")
+                        with Vertical(classes="form-group half"):
+                            yield Label(self.i18n.t("execute_label_retention_gb"))
+                            yield Input(placeholder="50", id="exec-retention-gb", type="number")
+
+                    with Horizontal(classes="form-row"):
+                        with Vertical(classes="form-group half"):
+                            yield Label(self.i18n.t("execute_label_retention_count"))
+                            yield Input(placeholder="10", id="exec-retention-count", type="number")
+
+                    with Horizontal(classes="button-row"):
+                        yield Button(self.i18n.t("execute_btn_preview"), id="exec-preview", variant="primary")
+                        yield Button(self.i18n.t("execute_btn_confirm"), id="exec-confirm", variant="success")
+                        yield Button(self.i18n.t("execute_btn_rollback"), id="exec-rollback", variant="warning")
+
+                    with Container(id="execute-preview", classes="results-area hidden"):
+                        yield Static(self.i18n.t("execute_preview_title"), classes="section-title")
+                        yield LogPanel(id="exec-preview-log")
+
+                # Settings Screen
+                with Container(id="settings-screen", classes="screen hidden"):
+                    yield Static(self.i18n.t("settings_title"), classes="screen-title")
+                    yield SettingsPane(id="settings-pane")
+
+                # Commander Screen
+                with Container(id="commander-screen", classes="screen hidden"):
+                    yield Static("Commander Workspace", id="cmd-placeholder")
+
+                # Warden Screen
+                with Container(id="warden-screen", classes="screen hidden"):
+                    yield Static(self.i18n.t("warden_title"), classes="screen-title")
+                    yield Static(self.i18n.t("warden_description"), classes="screen-description")
+
+                    yield Label(self.i18n.t("warden_label_zones"))
+                    yield Button(self.i18n.t("warden_btn_add_zone"), id="warden-add-zone")
+
+                    yield Container(id="warden-zones", classes="zone-list")
+
+                    yield Label(self.i18n.t("warden_label_incidents"))
+                    yield WardenDashboard(id="warden-dashboard")
+
+                    yield Label(self.i18n.t("warden_label_query"))
+                    yield Input(placeholder=self.i18n.t("warden_placeholder_query"), id="warden-query-input")
+                    yield Button("Suchen", id="warden-query-search", variant="primary")
+
+                # Notes Screen
+                with Container(id="notes-screen", classes="screen hidden"):
+                    yield Static(self.i18n.t("notes_title"), classes="screen-title")
+                    yield Static(self.i18n.t("notes_description"), classes="screen-description")
+
+                    yield Button(self.i18n.t("notes_btn_new"), id="notes-new", variant="primary")
+                    yield Label(self.i18n.t("notes_label_content"))
+                    yield Input(id="notes-content", multiline=True)
+                    yield Button(self.i18n.t("notes_btn_archive"), id="notes-archive")
+
         yield Footer()
 
-    def _build_indexing_screen(self) -> Container:
-        """Build the indexing configuration screen."""
-        container = Container(id="indexing-screen", classes="screen")
-        container.mount(
-            Static(self.i18n.t("indexing_title"), classes="screen-title"),
-            Static(self.i18n.t("indexing_description"), classes="screen-description"),
-        )
-
-        # Root path
-        group = Vertical(classes="form-group")
-        group.mount(Label(self.i18n.t("indexing_label_root_path")))
-        group.mount(Input(placeholder=self.i18n.t("indexing_placeholder_root_path"), id="idx-root-path"))
-        container.mount(group)
-
-        # Min/Max size
-        row = Horizontal(classes="form-row")
-        group1 = Vertical(classes="form-group half")
-        group1.mount(Label(self.i18n.t("indexing_label_min_size")))
-        group1.mount(Input(placeholder="0", id="idx-min-size", type="number"))
-        row.mount(group1)
-
-        group2 = Vertical(classes="form-group half")
-        group2.mount(Label(self.i18n.t("indexing_label_max_size")))
-        group2.mount(Input(placeholder="unlimited", id="idx-max-size", type="number"))
-        row.mount(group2)
-        container.mount(row)
-
-        # Whitelist
-        group = Vertical(classes="form-group")
-        group.mount(Label(self.i18n.t("indexing_label_whitelist")))
-        group.mount(Input(placeholder=self.i18n.t("indexing_placeholder_whitelist"), id="idx-whitelist"))
-        container.mount(group)
-
-        # Blacklist
-        group = Vertical(classes="form-group")
-        group.mount(Label(self.i18n.t("indexing_label_blacklist")))
-        group.mount(Input(placeholder=self.i18n.t("indexing_placeholder_blacklist"), id="idx-blacklist"))
-        container.mount(group)
-
-        # All types/sizes checkboxes
-        row = Horizontal(classes="form-row")
-        group1 = Vertical(classes="form-group half")
-        group1.mount(Label(self.i18n.t("indexing_check_all_types")))
-        group1.mount(Checkbox())
-        row.mount(group1)
-
-        group2 = Vertical(classes="form-group half")
-        group2.mount(Label(self.i18n.t("indexing_check_all_sizes")))
-        group2.mount(Checkbox())
-        row.mount(group2)
-        container.mount(row)
-
-        # Symlinks
-        group = Vertical(classes="form-group")
-        group.mount(Label(self.i18n.t("indexing_label_symlinks")))
-        select = Select(
-            options=[
-                (self.i18n.t("indexing_symlink_ignore"), "ignore"),
-                (self.i18n.t("indexing_symlink_follow"), "follow"),
-                (self.i18n.t("indexing_symlink_record"), "record"),
-            ],
-            id="idx-symlinks",
-            value="ignore"
-        )
-        group.mount(select)
-        container.mount(group)
-
-        # Hardlinks
-        row = Horizontal(classes="form-row")
-        group1 = Vertical(classes="form-group half")
-        group1.mount(Checkbox())
-        group1.mount(Label(self.i18n.t("indexing_check_hardlinks")))
-        row.mount(group1)
-
-        group2 = Vertical(classes="form-group half")
-        group2.mount(Checkbox())
-        group2.mount(Label(self.i18n.t("indexing_check_hardlinks_as_dupes")))
-        row.mount(group2)
-        container.mount(row)
-
-        # Max depth
-        group = Vertical(classes="form-group")
-        group.mount(Label(self.i18n.t("indexing_label_max_depth")))
-        group.mount(Input(placeholder="0", id="idx-max-depth", type="number"))
-        container.mount(group)
-
-        # Buttons
-        row = Horizontal(classes="button-row")
-        row.mount(Button(self.i18n.t("indexing_btn_start"), id="idx-start", variant="primary"))
-        row.mount(Button(self.i18n.t("indexing_btn_resume"), id="idx-resume"))
-        row.mount(Button(self.i18n.t("indexing_btn_clear"), id="idx-clear", variant="error"))
-        container.mount(row)
-
-        # Progress area
-        progress = Container(id="indexing-progress", classes="progress-area hidden")
-        progress.mount(Static("", id="idx-progress-current", classes="progress-line"))
-        progress.mount(Static("", id="idx-progress-count", classes="progress-line"))
-        progress.mount(Static("", id="idx-progress-bytes", classes="progress-line"))
-        progress.mount(Static("", id="idx-progress-speed", classes="progress-line"))
-        progress.mount(Static("", id="idx-progress-eta", classes="progress-line"))
-        progress.mount(Static("", id="idx-progress-types", classes="progress-line"))
-        progress.mount(Static("", id="idx-progress-total", classes="progress-line"))
-        progress.mount(Static("", id="idx-progress-warnings", classes="progress-line warning"))
-        progress.mount(Static("", id="idx-progress-errors", classes="progress-line error"))
-        container.mount(progress)
-
-        return container
-
-    def _build_compare_screen(self) -> Container:
-        """Build the comparison/duplicate search screen."""
-        with Container(id="compare-screen", classes="screen hidden"):
-            yield Static(self.i18n.t("compare_title"), classes="screen-title")
-            yield Static(self.i18n.t("compare_description"), classes="screen-description")
-
-            with Vertical(classes="form-group"):
-                yield Label(self.i18n.t("compare_mode_intra"))
-                yield Input(type="radio", name="compare-mode", value="intra", id="cmp-mode-intra")
-
-            with Vertical(classes="form-group"):
-                yield Label(self.i18n.t("compare_mode_inter"))
-                yield Input(type="radio", name="compare-mode", value="inter", id="cmp-mode-inter")
-
-            with Vertical(classes="form-group"):
-                yield Label(self.i18n.t("compare_label_ref_folders"))
-                # Tree for reference folder selection
-                tree = Tree("Indexes", id="cmp-ref-tree")
-                tree.show_root = False
-                yield tree
-
-            with Vertical(classes="form-group"):
-                yield Label(self.i18n.t("compare_label_target_folders"))
-                tree = Tree("Indexes", id="cmp-target-tree")
-                tree.show_root = False
-                yield tree
-
-            with Horizontal(classes="button-row"):
-                yield Button(self.i18n.t("compare_btn_start"), id="cmp-start", variant="primary")
-
-            # Results area
-            with Container(id="compare-results", classes="results-area hidden"):
-                yield Static("", id="cmp-result-groups")
-                yield Static("", id="cmp-result-wasted")
-                yield Static("", id="cmp-result-ref-protected")
-                yield DuplicateTable(id="cmp-duplicate-table")
-
-        return Container()
-
-    def _build_select_screen(self) -> Container:
-        """Build the auto-select filter configuration screen."""
-        with Container(id="select-screen", classes="screen hidden"):
-            yield Static(self.i18n.t("select_title"), classes="screen-title")
-            yield Static(self.i18n.t("select_description"), classes="screen-description")
-
-            yield Label(self.i18n.t("select_label_pipeline"))
-
-            # Filter pipeline list (reorderable)
-            with Container(id="filter-pipeline", classes="filter-pipeline"):
-                # Filters added dynamically
-                pass
-
-            with Horizontal(classes="button-row"):
-                yield Button(self.i18n.t("select_btn_add_filter"), id="sel-add-filter")
-                yield Button(self.i18n.t("select_btn_remove_filter"), id="sel-remove-filter")
-                yield Button(self.i18n.t("select_btn_move_up"), id="sel-move-up")
-                yield Button(self.i18n.t("select_btn_move_down"), id="sel-move-down")
-
-            # Filter type selector
-            with Vertical(classes="form-group"):
-                yield Select(
-                    options=[
-                        (self.i18n.t("select_filter_path_priority"), "path_priority"),
-                        (self.i18n.t("select_filter_filename_hygiene"), "filename_hygiene"),
-                        (self.i18n.t("select_filter_artifact"), "artifact"),
-                        (self.i18n.t("select_filter_path_depth"), "path_depth"),
-                        (self.i18n.t("select_filter_timestamp"), "timestamp"),
-                        (self.i18n.t("select_filter_owner"), "owner"),
-                    ],
-                    id="sel-filter-type",
-                    prompt="Filter-Typ wählen..."
-                )
-
-            with Horizontal(classes="button-row"):
-                yield Button(self.i18n.t("select_btn_run"), id="sel-run", variant="primary")
-
-            # Results summary
-            with Container(id="select-results", classes="results-area hidden"):
-                yield Static("", id="sel-result-summary")
-
-        return Container()
-
-    def _build_execute_screen(self) -> Container:
-        """Build the execution screen."""
-        with Container(id="execute-screen", classes="screen hidden"):
-            yield Static(self.i18n.t("execute_title"), classes="screen-title")
-
-            with Vertical(classes="form-group"):
-                yield Input(type="radio", name="exec-mode", value="audit", id="exec-mode-audit")
-                yield Label(self.i18n.t("execute_mode_audit"))
-
-            with Vertical(classes="form-group"):
-                yield Input(type="radio", name="exec-mode", value="safe", id="exec-mode-safe")
-                yield Label(self.i18n.t("execute_mode_safe"))
-
-            with Vertical(classes="form-group"):
-                yield Input(type="radio", name="exec-mode", value="hard", id="exec-mode-hard")
-                yield Label(self.i18n.t("execute_mode_hard"))
-
-            with Vertical(classes="form-group"):
-                yield Label(self.i18n.t("execute_label_quarantine"))
-                yield Input(placeholder="~/.datawarden/quarantine/", id="exec-quarantine-path")
-
-            with Vertical(classes="form-group"):
-                yield Checkbox()
-                yield Label(self.i18n.t("execute_check_initial_snapshot"))
-
-            yield Static(self.i18n.t("execute_warn_initial_snapshot"), classes="warning-box")
-
-            with Horizontal(classes="button-row"):
-                yield Button(self.i18n.t("execute_btn_confirm"), id="exec-confirm", variant="primary")
-                yield Button(self.i18n.t("execute_btn_rollback"), id="exec-rollback", variant="warning")
-
-            yield Static(self.i18n.t("execute_label_retention").format(count=5, gb=10), id="exec-retention")
-
-        return Container()
-
-    def _build_settings_screen(self) -> Container:
-        """Build the settings screen."""
-        with Container(id="settings-screen", classes="screen hidden"):
-            yield Static(self.i18n.t("settings_title"), classes="screen-title")
-
-            # UI & Theming
-            yield Static(self.i18n.t("settings_section_ui"), classes="section-title")
-            with Horizontal(classes="form-row"):
-                with Vertical(classes="form-group half"):
-                    yield Label(self.i18n.t("settings_label_theme"))
-                    yield Select(options=[("Dark", "dark"), ("Light", "light"), ("Nord", "nord"), ("Dracula", "dracula")], id="set-theme")
-                with Vertical(classes="form-group half"):
-                    yield Label(self.i18n.t("settings_label_language"))
-                    yield Select(options=[("Deutsch", "de_DE"), ("English", "en_US")], id="set-language")
-
-            # Confirmation Engine
-            yield Static(self.i18n.t("settings_section_confirm"), classes="section-title")
-            with Horizontal(classes="form-row"):
-                with Vertical(classes="form-group half"):
-                    yield Label(self.i18n.t("settings_label_confirm_levels"))
-                    yield Input(type="number", value="3", min="0", max="5", id="set-confirm-levels")
-                with Vertical(classes="form-group half"):
-                    yield Label(self.i18n.t("settings_label_confirm_hotkeys"))
-                    yield Input(placeholder="F10,J,Enter", id="set-confirm-hotkeys")
-
-            yield Static(self.i18n.t("settings_explain_confirm_tradeoff"), classes="info-box")
-
-            # AI Integration
-            yield Static(self.i18n.t("settings_section_ai"), classes="section-title")
-            with Vertical(classes="form-group"):
-                yield Checkbox()
-                yield Label(self.i18n.t("settings_check_ai_enabled"))
-
-            with Horizontal(classes="form-row"):
-                with Vertical(classes="form-group half"):
-                    yield Label(self.i18n.t("settings_label_ollama_url"))
-                    yield Input(placeholder="http://localhost:11434", id="set-ollama-url")
-                with Vertical(classes="form-group half"):
-                    yield Label(self.i18n.t("settings_label_ai_model"))
-                    yield Input(placeholder="qwen2.5-coder:7b", id="set-ai-model")
-
-            # Trust Level
-            yield Label(self.i18n.t("settings_label_trust_level"))
-            yield Select(
-                options=[
-                    (self.i18n.t("settings_trust_0"), "0"),
-                    (self.i18n.t("settings_trust_1"), "1"),
-                    (self.i18n.t("settings_trust_2"), "2"),
-                    (self.i18n.t("settings_trust_3"), "3"),
-                ],
-                id="set-trust-level",
-                value="0"
-            )
-
-            # Bundle Gatekeepers
-            yield Static(self.i18n.t("settings_section_bundles"), classes="section-title")
-            bundles = [
-                ("set-bundle-ui", self.i18n.t("settings_bundle_ui")),
-                ("set-bundle-filters", self.i18n.t("settings_bundle_filters")),
-                ("set-bundle-files", self.i18n.t("settings_bundle_files")),
-                ("set-bundle-governance", self.i18n.t("settings_bundle_governance")),
-            ]
-            for _bid, label in bundles:
-                with Horizontal(classes="form-row"):
-                    yield Checkbox()
-                    yield Label(label)
-
-            yield Static(self.i18n.t("settings_warn_relax_trust"), classes="warning-box")
-
-            # Error Handling
-            yield Static(self.i18n.t("settings_section_errors"), classes="section-title")
-            error_types = [
-                ("set-err-perm", self.i18n.t("settings_label_err_perm")),
-                ("set-err-locked", self.i18n.t("settings_label_err_locked")),
-                ("set-err-corrupt", self.i18n.t("settings_label_err_corrupt")),
-            ]
-            for eid, label in error_types:
-                with Horizontal(classes="form-row"):
-                    yield Label(label)
-                    yield Select(
-                        options=[
-                            (self.i18n.t("settings_err_ask"), "ask"),
-                            (self.i18n.t("settings_err_auto_skip"), "auto_skip"),
-                            (self.i18n.t("settings_err_retry"), "retry"),
-                        ],
-                        id=eid,
-                        value="ask"
-                    )
-
-        return Container()
-
-    def _build_commander_screen(self) -> Container:
-        """Build the Commander/File Manager screen."""
-        with Container(id="commander-screen", classes="screen hidden"):
-            yield Static(self.i18n.t("commander_title"), classes="screen-title")
-            yield Static(self.i18n.t("commander_hint_bar"), classes="hint-bar")
-
-            with Horizontal(id="commander-panes"):
-                # Left pane
-                with Vertical(id="cmd-left-pane", classes="commander-pane"):
-                    yield CommanderTree(id="cmd-left-tree", path=".")
-
-                # Right pane
-                with Vertical(id="cmd-right-pane", classes="commander-pane"):
-                    yield CommanderTree(id="cmd-right-tree", path=".")
-
-            # Grep panel
-            with Container(id="cmd-grep", classes="panel hidden"):
-                yield Label(self.i18n.t("commander_label_grep"))
-                yield Input(placeholder=self.i18n.t("commander_placeholder_grep"), id="cmd-grep-input")
-                yield DataTable(id="cmd-grep-results")
-
-            # Shell panel
-            with Container(id="cmd-shell", classes="panel hidden"):
-                yield Label(self.i18n.t("commander_label_shell"))
-                yield Input(placeholder=self.i18n.t("commander_placeholder_shell"), id="cmd-shell-input")
-                yield Log(id="cmd-shell-output", highlight=True)
-
-            # Hex panel
-            with Container(id="cmd-hex", classes="panel hidden"):
-                yield Label(self.i18n.t("commander_label_hex"))
-                yield HexDebugPanel(id="cmd-hex-panel")
-
-        return Container()
-
-    def _build_warden_screen(self) -> Container:
-        """Build the FileSystem Warden screen."""
-        with Container(id="warden-screen", classes="screen hidden"):
-            yield Static(self.i18n.t("warden_title"), classes="screen-title")
-            yield Static(self.i18n.t("warden_description"), classes="screen-description")
-
-            yield Label(self.i18n.t("warden_label_zones"))
-            yield Button(self.i18n.t("warden_btn_add_zone"), id="warden-add-zone")
-
-            # Zone list (dynamic)
-            with Container(id="warden-zones", classes="zone-list"):
-                pass
-
-            yield Label(self.i18n.t("warden_label_incidents"))
-            yield WardenDashboard(id="warden-dashboard")
-
-            # Query line
-            yield Label(self.i18n.t("warden_label_query"))
-            yield Input(placeholder=self.i18n.t("warden_placeholder_query"), id="warden-query-input")
-            yield Button("Suchen", id="warden-query-search", variant="primary")
-
-        return Container()
-
-    def _build_notes_screen(self) -> Container:
-        """Build the Notes screen."""
-        with Container(id="notes-screen", classes="screen hidden"):
-            yield Static(self.i18n.t("notes_title"), classes="screen-title")
-            yield Static(self.i18n.t("notes_description"), classes="screen-description")
-
-            yield Button(self.i18n.t("notes_btn_new"), id="notes-new", variant="primary")
-            yield Label(self.i18n.t("notes_label_content"))
-            yield Input(id="notes-content", multiline=True)
-            yield Button(self.i18n.t("notes_btn_archive"), id="notes-archive")
-
-        return Container()
+    # --- App Lifecycle ---
 
     def on_mount(self) -> None:
         """Initialize app on mount."""
         self.switch_screen("indexing")
         self.load_config()
+        self.theme_manager.apply_theme("dark")
 
     def load_config(self) -> None:
         """Load configuration from file."""
@@ -583,6 +333,8 @@ class DataWardenApp(App):
         """Save configuration to file."""
         # TODO: Implement config saving
         pass
+
+    # --- Screen Management ---
 
     def switch_screen(self, screen_id: str) -> None:
         """Switch to a different screen."""
@@ -601,6 +353,17 @@ class DataWardenApp(App):
                 btn.add_class("active")
 
         self.current_screen = screen_id
+
+        # Special handling for commander screen - initialize layout
+        if screen_id == "commander":
+            self._init_commander_layout()
+
+    def _init_commander_layout(self) -> None:
+        """Initialize the Commander layout using LayoutManager."""
+        if not self.workspace.root:
+            self.workspace.create_default_layout()
+
+    # --- Event Handlers ---
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
@@ -623,6 +386,8 @@ class DataWardenApp(App):
         # Compare actions
         elif btn_id == "cmp-start":
             self.action_start_comparison()
+        elif btn_id == "cmp-load":
+            self.action_load_index()
 
         # Select actions
         elif btn_id == "sel-add-filter":
@@ -635,8 +400,14 @@ class DataWardenApp(App):
             self.action_move_filter_down()
         elif btn_id == "sel-run":
             self.action_run_auto_select()
+        elif btn_id == "sel-save-preset":
+            self.action_save_filter_preset()
+        elif btn_id == "sel-load-preset":
+            self.action_load_filter_preset()
 
         # Execute actions
+        elif btn_id == "exec-preview":
+            self.action_preview_execution()
         elif btn_id == "exec-confirm":
             self.action_confirm_execution()
         elif btn_id == "exec-rollback":
@@ -654,7 +425,8 @@ class DataWardenApp(App):
         elif btn_id == "notes-archive":
             self.action_open_note_archive()
 
-    # Action methods (to be implemented)
+    # --- Action Methods (Stubs to be implemented) ---
+
     def action_start_indexing(self) -> None:
         self.notify("Indexierung gestartet...", severity="information")
 
@@ -666,6 +438,9 @@ class DataWardenApp(App):
 
     def action_start_comparison(self) -> None:
         self.notify("Vergleich gestartet...", severity="information")
+
+    def action_load_index(self) -> None:
+        self.notify("Index laden...", severity="information")
 
     def action_add_filter(self) -> None:
         self.notify("Filter hinzugefügt", severity="information")
@@ -681,6 +456,15 @@ class DataWardenApp(App):
 
     def action_run_auto_select(self) -> None:
         self.notify("Auto-Selektion ausgeführt", severity="information")
+
+    def action_save_filter_preset(self) -> None:
+        self.notify("Preset gespeichert", severity="information")
+
+    def action_load_filter_preset(self) -> None:
+        self.notify("Preset geladen", severity="information")
+
+    def action_preview_execution(self) -> None:
+        self.notify("Ausführung-Vorschau...", severity="information")
 
     def action_confirm_execution(self) -> None:
         self.notify("Ausführung bestätigt - Bestätigungs-Modal würde hier erscheinen", severity="information")
