@@ -7,6 +7,7 @@ Main entry point for the Textual TUI application.
 
 from __future__ import annotations
 
+import asyncio
 import sys
 from pathlib import Path
 
@@ -28,8 +29,11 @@ from textual.widgets import (
     Static,
     TextArea,
 )
+from textual.worker import get_current_worker
 
 from core.i18n import I18nManager
+from core.indexer import Indexer, IndexWriter, SavestateManager
+from core.models import ScanConfig, SymlinkMode
 from ui.components import (
     DuplicateTable,
     LogPanel,
@@ -70,6 +74,14 @@ class DataWardenApp(App):
     current_mode: str = "AUDIT"
     trust_level: int = 0
     quarantine_usage: str = "0/0 GB"
+    is_indexing: bool = False
+    indexing_current: str = ""
+    indexing_files_done: int = 0
+    indexing_files_total: int = 0
+    indexing_bytes_done: int = 0
+    indexing_bytes_total: int = 0
+    indexing_speed: str = ""
+    indexing_eta: str = ""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -77,6 +89,42 @@ class DataWardenApp(App):
         self.workspace = LayoutManager(self)
         self.theme_manager = ThemeManager(self)
         self.current_screen = "indexing"
+
+    # --- Watchers for reactive attributes ---
+
+    def watch_indexing_current(self, value: str) -> None:
+        try:
+            self.query_one("#idx-progress-current", Static).update(f"Aktuell: {value}")
+        except Exception:
+            pass
+
+    def watch_indexing_files_done(self, value: int) -> None:
+        try:
+            total = self.indexing_files_total
+            self.query_one("#idx-progress-count", Static).update(f"Dateien: {value}/{total}")
+        except Exception:
+            pass
+
+    def watch_indexing_bytes_done(self, value: int) -> None:
+        try:
+            total = self.indexing_bytes_total
+            mb_done = value / (1024 * 1024)
+            mb_total = total / (1024 * 1024)
+            self.query_one("#idx-progress-bytes", Static).update(f"Größe: {mb_done:.1f}/{mb_total:.1f} MB")
+        except Exception:
+            pass
+
+    def watch_indexing_speed(self, value: str) -> None:
+        try:
+            self.query_one("#idx-progress-speed", Static).update(f"Geschwindigkeit: {value}")
+        except Exception:
+            pass
+
+    def watch_indexing_eta(self, value: str) -> None:
+        try:
+            self.query_one("#idx-progress-eta", Static).update(f"ETA: {value}")
+        except Exception:
+            pass
 
     def compose(self) -> ComposeResult:
         """Compose the main application layout."""
@@ -154,10 +202,10 @@ class DataWardenApp(App):
 
                     with Horizontal(classes="form-row"):
                         with Vertical(classes="form-group half"):
-                            yield Checkbox()
+                            yield Checkbox(id="idx-hardlinks-track")
                             yield Label(self.i18n.t("indexing_check_hardlinks"))
                         with Vertical(classes="form-group half"):
-                            yield Checkbox()
+                            yield Checkbox(id="idx-hardlinks-as-dupes")
                             yield Label(self.i18n.t("indexing_check_hardlinks_as_dupes"))
 
                     with Vertical(classes="form-group"):
@@ -426,10 +474,162 @@ class DataWardenApp(App):
         elif btn_id == "notes-archive":
             self.action_open_note_archive()
 
-    # --- Action Methods (Stubs to be implemented) ---
+    # --- Action Methods ---
 
     def action_start_indexing(self) -> None:
-        self.notify("Indexierung gestartet...", severity="information")
+        """Start the indexing process with current form values."""
+        if self.is_indexing:
+            self.notify("Indexierung läuft bereits", severity="warning")
+            return
+
+        # Collect form values
+        root_path = self.query_one("#idx-root-path", Input).value.strip()
+        if not root_path:
+            self.notify("Kein Hauptordner angegeben", severity="error")
+            return
+
+        root = Path(root_path).expanduser().resolve()
+        if not root.exists():
+            self.notify(f"Ordner existiert nicht: {root}", severity="error")
+            return
+        if not root.is_dir():
+            self.notify(f"Kein Verzeichnis: {root}", severity="error")
+            return
+
+        # Parse min/max size
+        try:
+            min_size_str = self.query_one("#idx-min-size", Input).value.strip()
+            min_size = int(min_size_str) if min_size_str else 0
+        except ValueError:
+            min_size = 0
+
+        try:
+            max_size_str = self.query_one("#idx-max-size", Input).value.strip()
+            max_size = int(max_size_str) if max_size_str else 0
+        except ValueError:
+            max_size = 0
+
+        # Parse whitelist/blacklist
+        whitelist_str = self.query_one("#idx-whitelist", Input).value.strip()
+        whitelist = [ext.strip().lower() for ext in whitelist_str.split(",") if ext.strip()]
+
+        blacklist_str = self.query_one("#idx-blacklist", Input).value.strip()
+        blacklist = [ext.strip().lower() for ext in blacklist_str.split(",") if ext.strip()]
+
+        all_types = self.query_one("#idx-check-all-types", Checkbox).value
+        all_sizes = self.query_one("#idx-check-all-sizes", Checkbox).value
+
+        # Symlink mode
+        symlink_select = self.query_one("#idx-symlinks", Select)
+        symlink_mode_str = symlink_select.value or "ignore"
+        symlink_mode = SymlinkMode(symlink_mode_str)
+
+        # Hardlinks
+        hardlinks_track = self.query_one("#idx-hardlinks-track", Checkbox).value
+        hardlinks_as_dupes = self.query_one("#idx-hardlinks-as-dupes", Checkbox).value
+
+        # Max depth
+        try:
+            max_depth_str = self.query_one("#idx-max-depth", Input).value.strip()
+            max_depth = int(max_depth_str) if max_depth_str else 0
+        except ValueError:
+            max_depth = 0
+
+        # Build scan config
+        config = ScanConfig(
+            root_path=root,
+            min_size=min_size if not all_sizes else 0,
+            max_size=max_size if not all_sizes and max_size > 0 else None,
+            whitelist_ext=whitelist if whitelist and not all_types else None,
+            blacklist_ext=blacklist if blacklist and not all_types else None,
+            symlink_mode=symlink_mode,
+            track_hardlinks=hardlinks_track,
+            treat_hardlinks_as_dupes=hardlinks_as_dupes,
+            max_depth=max_depth if max_depth > 0 else None,
+        )
+
+        # Show progress area
+        progress = self.query_one("#indexing-progress", Container)
+        progress.remove_class("hidden")
+
+        # Disable start button, enable resume/clear
+        self.query_one("#idx-start", Button).disabled = True
+        self.query_one("#idx-resume", Button).disabled = False
+        self.query_one("#idx-clear", Button).disabled = False
+
+        # Run in background worker
+        self.run_worker(
+            self._run_indexing(config, root),
+            exclusive=True,
+            thread=False,
+        )
+
+    async def _run_indexing(self, config: ScanConfig, root: Path) -> None:
+        """Background worker for indexing."""
+        worker = get_current_worker()
+        self.is_indexing = True
+
+        # Setup telemetry queue for live updates from indexer
+        telemetry_queue: asyncio.Queue = asyncio.Queue(maxsize=100)
+
+        # Update progress UI from telemetry queue
+        async def update_ui():
+            while self.is_indexing and not worker.is_cancelled:
+                try:
+                    data = await asyncio.wait_for(telemetry_queue.get(), timeout=0.5)
+                    self.indexing_current = data.current_file
+                    self.indexing_files_done = data.files_done
+                    self.indexing_files_total = data.files_total
+                    self.indexing_bytes_done = data.bytes_done
+                    self.indexing_bytes_total = data.bytes_total
+                    self.indexing_speed = f"{data.files_per_sec:.0f} files/s"
+                    if data.mb_per_sec > 0:
+                        self.indexing_speed += f" ({data.mb_per_sec:.1f} MB/s)"
+                    if data.eta_seconds > 0:
+                        self.indexing_eta = f"{int(data.eta_seconds)}s"
+                except TimeoutError:
+                    continue
+
+        ui_task = asyncio.create_task(update_ui())
+
+        try:
+            # Create savestate manager and index writer
+            index_dir = Path("indexes") / root.name.replace(":", "_").replace("\\", "_").replace("/", "_")
+            savestate = SavestateManager(index_dir, root)
+            await savestate.load()
+
+            index_writer = IndexWriter(index_dir)
+
+            # Create indexer with telemetry queue
+            indexer = Indexer(config, telemetry_queue=telemetry_queue)
+
+            # Run scan - the indexer yields FileMetadata
+            async for file_meta in indexer.scan(root, savestate, index_writer):
+                if worker.is_cancelled:
+                    break
+
+                self.indexing_files_done += 1
+                self.indexing_bytes_done += file_meta.size
+                self.indexing_current = str(file_meta.path)
+
+                # Update totals from indexer
+                if self.indexing_files_total == 0:
+                    self.indexing_files_total = indexer.total_files
+                    self.indexing_bytes_total = indexer.total_bytes
+
+                # Yield to event loop
+                await asyncio.sleep(0)
+
+            self.notify(f"Indexierung abgeschlossen: {self.indexing_files_done} Dateien", severity="information")
+
+        except Exception as e:
+            self.notify(f"Fehler bei Indexierung: {e}", severity="error")
+        finally:
+            self.is_indexing = False
+            ui_task.cancel()
+
+            # Re-enable start button
+            self.query_one("#idx-start", Button).disabled = False
 
     def action_resume_indexing(self) -> None:
         self.notify("Indexierung fortgesetzt...", severity="information")
